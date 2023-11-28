@@ -6,6 +6,9 @@
 #include <stdexcept>
 #include <cstdlib>
 
+const uint32_t WIDTH = 800;
+const uint32_t HEIGHT = 600;
+
 class VulkanTemplateApp {
 public:
     void run() {
@@ -20,14 +23,12 @@ private:
     VkInstance instance;
 
     void initWindow() {
-        std::cout << "initializing GLFW window\n";
-
         glfwInit();
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Tell GLFW not to create a GL context
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); // Disable window resizing
 
-        window = glfwCreateWindow(800, 600, "Vulkan Template", nullptr, nullptr);
+        window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan Template", nullptr, nullptr);
     }
 
     void initVulkan() {
@@ -43,7 +44,7 @@ private:
         std::vector<VkExtensionProperties> extensions(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-        std::cout << "available extensions (" << extensionCount << "):\n";
+        std::cout << "available VK extensions (" << extensionCount << "):\n";
 
         uint32_t availableCount = 0;
 
@@ -90,16 +91,13 @@ private:
         createInfo.ppEnabledExtensionNames = glfwExtensions;
         createInfo.enabledLayerCount = 0;
 
+        // Abort if VK instance cannot be created
         if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
             throw std::runtime_error("error: failed to create instance!");
-        } else {
-            std::cout << "successfully created VK instance!\n";
-        }        
+        }      
     }
 
     void renderLoop() {
-        std::cout << "starting main loop\n";
-
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
         }
@@ -107,7 +105,7 @@ private:
 
     void cleanup() {
         vkDestroyInstance(instance, nullptr);
-        
+
         glfwDestroyWindow(window);
         glfwTerminate();
     }
