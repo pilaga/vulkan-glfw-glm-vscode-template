@@ -11,7 +11,7 @@ public:
     void run() {
         initWindow();
         initVulkan();
-        mainLoop();
+        renderLoop();
         cleanup();
     }
 
@@ -81,6 +81,7 @@ private:
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
+        // Abort if required extensions are unavailable
         if(!checkGlfwExtensionsAvailability(glfwExtensions, glfwExtensionCount)) {
             throw std::runtime_error("error: required GLFW extensions are not available!");
         };
@@ -96,7 +97,7 @@ private:
         }        
     }
 
-    void mainLoop() {
+    void renderLoop() {
         std::cout << "starting main loop\n";
 
         while (!glfwWindowShouldClose(window)) {
@@ -106,9 +107,7 @@ private:
 
     void cleanup() {
         glfwDestroyWindow(window);
-
         glfwTerminate();
-
     }
 };
 
