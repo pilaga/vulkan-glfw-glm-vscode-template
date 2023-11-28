@@ -34,7 +34,35 @@ private:
         createVulkanInstance();
     }
 
-   
+    bool checkGlfwExtensionsAvailability(const char** requiredExtensions, uint32_t requiredCount) {
+        // Retrieve available extensions count
+        uint32_t extensionCount = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+
+        // Retrieve available extensions list
+        std::vector<VkExtensionProperties> extensions(extensionCount);
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+
+        std::cout << "available extensions (" << extensionCount << "):\n";
+
+        uint32_t availableCount = 0;
+
+        // Check whether required extension is in available extension list
+        for (const auto& extension : extensions) {
+            for(int i=0; i<requiredCount; i++) {
+                std::string s1 = requiredExtensions[i];
+                std::string s2 = extension.extensionName; 
+                
+                if(s1.compare(s2) == 0) {
+                    availableCount++;
+                }
+            }
+
+            std::cout << '\t' << extension.extensionName << '\n';
+        }
+
+        return availableCount == requiredCount;
+    }
 
     void createVulkanInstance() {
         VkApplicationInfo appInfo{};
@@ -53,7 +81,9 @@ private:
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-
+        if(!checkGlfwExtensionsAvailability(glfwExtensions, glfwExtensionCount)) {
+            throw std::runtime_error("error: required GLFW extensions are not available!");
+        };
 
         createInfo.enabledExtensionCount = glfwExtensionCount;
         createInfo.ppEnabledExtensionNames = glfwExtensions;
