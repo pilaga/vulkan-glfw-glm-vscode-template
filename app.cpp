@@ -18,6 +18,22 @@ const bool enableValidationLayers = false;
 const bool enableValidationLayers = true;
 #endif
 
+VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) {
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    } else {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+
+void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator) {
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        func(instance, debugMessenger, pAllocator);
+    }
+}
+
 /**
  * Template class implementing Vulkan, GLFW for window creation & GLM for algebraic functions.
  */
@@ -32,7 +48,8 @@ class VulkanTemplateApp {
 
    private:
     GLFWwindow *window;
-    VkInstance instance;
+    VkInstance vk_instance;
+    VkDebugUtilsMessengerEXT vk_debug_messenger;
 
     /**
      * Initializes the GLFW window.
@@ -49,7 +66,10 @@ class VulkanTemplateApp {
     /**
      * Initializes Vulkan, creates VK instance.
      */
-    void initVulkan() { createVulkanInstance(); }
+    void initVulkan() {
+        createVulkanInstance();
+        createVkDebugMessenger();
+    }
 
     /**
      * Checks the extensions required by GLFW are available.
@@ -78,6 +98,30 @@ class VulkanTemplateApp {
         }
 
         return availableCount == requiredCount;
+    }
+
+    /**
+     * Fetches and returns the list of GLFW required extensions.
+     * @returns The list of required extensions.
+     */
+    std::vector<const char *> getRequiredExtensions() {
+        uint32_t glfwExtensionCount = 0;
+        const char **glfwExtensions;
+        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+        // Abort if required extensions are unavailable
+        if (!checkGlfwExtensionsAvailability(glfwExtensions, glfwExtensionCount)) {
+            throw std::runtime_error("error: required GLFW extensions are not available!");
+        };
+
+        std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+        // Manually add the validation layer extension
+        if (enableValidationLayers) {
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
+
+        return extensions;
     }
 
     /**
@@ -139,26 +183,55 @@ class VulkanTemplateApp {
 
             createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
             createInfo.ppEnabledLayerNames = validationLayers.data();
+
+            // Add validation debug callback for instanciationg
+            VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+            populateVkDebugMessengerCreateInfo(debugCreateInfo);
+            createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
         } else {
             createInfo.enabledLayerCount = 0;
+            createInfo.pNext = nullptr;
         }
 
         // Get the extensions required to interface with the window system
-        uint32_t glfwExtensionCount = 0;
-        const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-        // Abort if required extensions are unavailable
-        if (!checkGlfwExtensionsAvailability(glfwExtensions, glfwExtensionCount)) {
-            throw std::runtime_error("error: required GLFW extensions are not available!");
-        };
-
-        createInfo.enabledExtensionCount = glfwExtensionCount;
-        createInfo.ppEnabledExtensionNames = glfwExtensions;
-        createInfo.enabledLayerCount = 0;
+        auto extensions = getRequiredExtensions();
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+        createInfo.ppEnabledExtensionNames = extensions.data();
 
         // Abort if VK instance cannot be created
-        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+        if (vkCreateInstance(&createInfo, nullptr, &vk_instance) != VK_SUCCESS) {
             throw std::runtime_error("error: failed to create instance!");
+        }
+    }
+
+    /**
+     * Debug callback function for Vulkan.
+     */
+    static VKAPI_ATTR VkBool32 VKAPI_CALL vkDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                          const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData) {
+        std::cerr << "[validation_layer] " << pCallbackData->pMessage << std::endl;
+        return VK_FALSE;
+    }
+
+    void populateVkDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
+        createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        createInfo.pfnUserCallback = vkDebugCallback;
+    }
+
+    /**
+     * Creates a debug messenger using the vkDebugCallback function.
+     */
+    void createVkDebugMessenger() {
+        if (!enableValidationLayers) return;
+
+        VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+        populateVkDebugMessengerCreateInfo(createInfo);
+
+        if (CreateDebugUtilsMessengerEXT(vk_instance, &createInfo, nullptr, &vk_debug_messenger) != VK_SUCCESS) {
+            throw std::runtime_error("failed to set up debug messenger!");
         }
     }
 
@@ -175,7 +248,11 @@ class VulkanTemplateApp {
      * Clean-up: destroy VK instance and GLFW window.
      */
     void cleanup() {
-        vkDestroyInstance(instance, nullptr);
+        if (enableValidationLayers) {
+            DestroyDebugUtilsMessengerEXT(vk_instance, vk_debug_messenger, nullptr);
+        }
+
+        vkDestroyInstance(vk_instance, nullptr);
 
         glfwDestroyWindow(window);
         glfwTerminate();
