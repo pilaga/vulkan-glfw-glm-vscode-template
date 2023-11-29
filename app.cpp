@@ -11,12 +11,16 @@ const uint32_t HEIGHT = 600;
 
 const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 
+// Only enable validation layers in debug mode
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
 #else
 const bool enableValidationLayers = true;
 #endif
 
+/**
+ * Template class implementing Vulkan, GLFW for window creation & GLM for algebraic functions.
+ */
 class VulkanTemplateApp {
    public:
     void run() {
@@ -42,6 +46,9 @@ class VulkanTemplateApp {
         window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan Template", nullptr, nullptr);
     }
 
+    /**
+     * Initializes Vulkan, creates VK instance.
+     */
     void initVulkan() { createVulkanInstance(); }
 
     /**
@@ -58,9 +65,8 @@ class VulkanTemplateApp {
         std::vector<VkExtensionProperties> extensions(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-        std::cout << "available VK extensions (" << extensionCount << "):\n";
-
         uint32_t availableCount = 0;
+        std::cout << "available VK extensions (" << extensionCount << "):\n";
 
         // Check whether required extension is in available extension list
         for (const auto &extension : extensions) {
@@ -86,6 +92,11 @@ class VulkanTemplateApp {
 
         std::vector<VkLayerProperties> availableLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+        std::cout << "available VK validation layers (" << layerCount << "):\n";
+        for (const auto &availableLayer : availableLayers) {
+            std::cout << '\t' << availableLayer.layerName << '\n';
+        }
 
         return false;
     }
@@ -123,14 +134,22 @@ class VulkanTemplateApp {
         if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
             throw std::runtime_error("error: failed to create instance!");
         }
+
+        checkVKValidationLayerSupport();
     }
 
+    /**
+     * Main render loop.
+     */
     void renderLoop() {
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
         }
     }
 
+    /**
+     * Clean-up: destroy VK instance and GLFW window.
+     */
     void cleanup() {
         vkDestroyInstance(instance, nullptr);
 
