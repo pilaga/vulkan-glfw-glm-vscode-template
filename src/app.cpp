@@ -36,6 +36,7 @@ class VulkanTemplateApp {
     GLFWwindow *window;
     VkInstance vk_instance;
     VkDebugUtilsMessengerEXT vk_debug_messenger;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
     /**
      * Initializes the GLFW window.
@@ -53,9 +54,43 @@ class VulkanTemplateApp {
      * Initializes Vulkan, creates VK instance.
      */
     void initVulkan() {
-        createVulkanInstance();
+        createVkInstance();
         createVkDebugMessenger();
+        pickGPU();
     }
+
+    /**
+     * Picks the first GPU that provides VK support and assigns its handle to <physicalDevice> class member.
+     */
+    void pickGPU() {
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(vk_instance, &deviceCount, nullptr);
+
+        if (deviceCount == 0) {
+            throw std::runtime_error("error: could not find a GPU with VK support!");
+        }
+
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(vk_instance, &deviceCount, devices.data());
+
+        for (const auto &device : devices) {
+            if (isGPUSuitable(device)) {
+                physicalDevice = device;
+                break;
+            }
+        }
+
+        if (physicalDevice == VK_NULL_HANDLE) {
+            throw std::runtime_error("error: could not find a suitable GPU!");
+        }
+    }
+
+    /**
+     * Checks the provided GPU device is suitable for our application.
+     * @param device The physical device handle.
+     * @returns True if the device is suitable.
+     */
+    bool isGPUSuitable(VkPhysicalDevice device) { return true; }
 
     /**
      * Checks the extensions required by GLFW are available.
@@ -146,7 +181,7 @@ class VulkanTemplateApp {
     /**
      * Creates the vulkan instance.
      */
-    void createVulkanInstance() {
+    void createVkInstance() {
         // Create VK application info structure
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
