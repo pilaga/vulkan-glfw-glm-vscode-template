@@ -68,12 +68,10 @@ class VulkanTemplateApp {
         uint32_t availableCount = 0;
         std::cout << "available VK extensions (" << extensionCount << "):\n";
 
-        // Check whether required extension is in available extension list
+        // Check if required extension exists
         for (const auto &extension : extensions) {
             for (int i = 0; i < requiredCount; i++) {
-                std::string s1 = requiredExtensions[i];
-                std::string s2 = extension.extensionName;
-                if (s1.compare(s2) == 0) availableCount++;
+                if (strcmp(requiredExtensions[i], extension.extensionName) == 0) availableCount++;
             }
 
             std::cout << '\t' << extension.extensionName << '\n';
@@ -98,13 +96,28 @@ class VulkanTemplateApp {
             std::cout << '\t' << availableLayer.layerName << '\n';
         }
 
-        return false;
+        // Check required layer is available
+        for (const char *layerName : validationLayers) {
+            bool layerFound = false;
+
+            for (const auto &layerProperties : availableLayers) {
+                if (strcmp(layerName, layerProperties.layerName) == 0) {
+                    layerFound = true;
+                    break;
+                }
+            }
+
+            if (!layerFound) return false;
+        }
+
+        return true;
     }
 
     /**
      * Creates the vulkan instance.
      */
     void createVulkanInstance() {
+        // Create VK application info structure
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "Vulkan Template";
@@ -113,9 +126,22 @@ class VulkanTemplateApp {
         appInfo.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
         appInfo.apiVersion = VK_API_VERSION_1_0;
 
+        // Create info structure
         VkInstanceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
+
+        // Add validation layer if enabled
+        if (enableValidationLayers) {
+            if (!checkVKValidationLayerSupport()) {
+                throw std::runtime_error("error: required validation layer not available!");
+            }
+
+            createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+            createInfo.ppEnabledLayerNames = validationLayers.data();
+        } else {
+            createInfo.enabledLayerCount = 0;
+        }
 
         // Get the extensions required to interface with the window system
         uint32_t glfwExtensionCount = 0;
@@ -134,8 +160,6 @@ class VulkanTemplateApp {
         if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
             throw std::runtime_error("error: failed to create instance!");
         }
-
-        checkVKValidationLayerSupport();
     }
 
     /**
