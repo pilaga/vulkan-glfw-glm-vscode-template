@@ -67,6 +67,7 @@
     "concepts": "cpp",
     "forward_list": "cpp",
     "format": "cpp",
-    "optional": "cpp"
+    "optional": "cpp",
+    "*.clang-format": "cpp"
   }
 }
