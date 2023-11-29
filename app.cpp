@@ -20,7 +20,7 @@ const bool enableValidationLayers = true;
 class VulkanTemplateApp {
    public:
     void run() {
-        initWindow();
+        initGlfwWindow();
         initVulkan();
         renderLoop();
         cleanup();
@@ -30,7 +30,10 @@ class VulkanTemplateApp {
     GLFWwindow *window;
     VkInstance instance;
 
-    void initWindow() {
+    /**
+     * Initializes the GLFW window.
+     */
+    void initGlfwWindow() {
         glfwInit();
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);  // Tell GLFW not to create a GL context
@@ -41,12 +44,17 @@ class VulkanTemplateApp {
 
     void initVulkan() { createVulkanInstance(); }
 
+    /**
+     * Checks the extensions required by GLFW are available.
+     * @param requiredExtensions The required extensions.
+     * @param requiredCount The number of required extensions.
+     * @returns True if the extensions are available, false otherwise.
+     */
     bool checkGlfwExtensionsAvailability(const char **requiredExtensions, uint32_t requiredCount) {
-        // Retrieve available extensions count
+        // Retrieve available extensions count and list
         uint32_t extensionCount = 0;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
-        // Retrieve available extensions list
         std::vector<VkExtensionProperties> extensions(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
@@ -68,6 +76,23 @@ class VulkanTemplateApp {
         return availableCount == requiredCount;
     }
 
+    /**
+     * Checks support for VK validation layers.
+     * @returns True if validation layers are supported.
+     */
+    bool checkVKValidationLayerSupport() {
+        uint32_t layerCount = 0;
+        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+        std::vector<VkLayerProperties> availableLayers(layerCount);
+        vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+        return false;
+    }
+
+    /**
+     * Creates the vulkan instance.
+     */
     void createVulkanInstance() {
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
