@@ -13,7 +13,7 @@ VS Code template for Vulkan using GLFW for window creation and GLM for linear al
 
 - GLFW initialization and window creation
 - Vulkan initialization and instance creation
-- Vulkan validation layers
+- Vulkan validation layers & debug messenger
 
 ### Notes
 

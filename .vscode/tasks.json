@@ -1,6 +1,6 @@
 {
-  // {env:SDK_PATH}
-
+  // TODO: Update paths to use environment variable: {env:SDK_PATH}
+  
   "tasks": [
     {
       "type": "cppbuild",
@@ -13,14 +13,10 @@
         "/Fe:",
         "${workspaceFolder}\\bin\\${fileBasenameNoExtension}.exe",
         "${workspaceFolder}\\src\\*.cpp",
-        "/I",
-        "${workspaceFolder}\\include",
-        "/I",
-        "C:\\SDK\\VulkanSDK\\1.3.268.0\\Include",
-        "/I",
-        "C:\\SDK\\GLFW\\glfw-3.3.8.bin.WIN64\\include",
-        "/I",
-        "$:\\SDK\\GLM\\glm-0.9.9.8",
+        "-I${workspaceFolder}\\include",
+        "-IC:\\SDK\\VulkanSDK\\1.3.268.0\\Include",
+        "-IC:\\SDK\\GLFW\\glfw-3.3.8.bin.WIN64\\include",
+        "-IC:\\SDK\\GLM\\glm-0.9.9.8",
         "/link",
         "C:\\SDK\\GLFW\\glfw-3.3.8.bin.WIN64\\lib-vc2019\\glfw3_mt.lib",
         "C:\\SDK\\VulkanSDK\\1.3.268.0\\Lib\\vulkan-1.lib",
