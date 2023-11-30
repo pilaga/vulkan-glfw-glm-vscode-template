@@ -74,7 +74,24 @@ class VulkanTemplateApp {
         float queuePriority = 1.0f;
         queueCreateInfo.pQueuePriorities = &queuePriority;
 
+        // Specify device features, leave empty for now as we don't need anything specific
         VkPhysicalDeviceFeatures deviceFeatures{};
+
+        // Create info for the logical device
+        VkDeviceCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        createInfo.pQueueCreateInfos = &queueCreateInfo;
+        createInfo.queueCreateInfoCount = 1;
+        createInfo.pEnabledFeatures = &deviceFeatures;
+        createInfo.enabledExtensionCount = 0;
+
+        // Add validation layer if enabled
+        if (enableValidationLayers) {
+            createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+            createInfo.ppEnabledLayerNames = validationLayers.data();
+        } else {
+            createInfo.enabledLayerCount = 0;
+        }
     }
 
     /**
