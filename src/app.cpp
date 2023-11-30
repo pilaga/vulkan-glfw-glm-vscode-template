@@ -108,6 +108,17 @@ class VulkanTemplateApp {
     }
 
     /**
+     * Find queue families for the specified GPU.
+     * @param device The GPU device.
+     * @returns The found queue familiy indices.
+     */
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
+        QueueFamilyIndices indices;
+        // Logic to find queue family indices to populate struct with
+        return indices;
+    }
+
+    /**
      * Checks the extensions required by GLFW are available.
      * @param requiredExtensions The required extensions.
      * @param requiredCount The number of required extensions.
