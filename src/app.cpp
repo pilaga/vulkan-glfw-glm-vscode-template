@@ -36,8 +36,9 @@ class VulkanTemplateApp {
     GLFWwindow *window;
     VkInstance vk_instance;
     VkDebugUtilsMessengerEXT vk_debug_messenger;
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkDevice device;
+    VkPhysicalDevice physical_device = VK_NULL_HANDLE;  // Physical device
+    VkDevice device;                                    // Logical device
+    VkQueue graphicsQueue;
 
     /**
      * Initializes the GLFW window.
@@ -62,7 +63,7 @@ class VulkanTemplateApp {
     }
 
     void createLogicalDevice() {
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+        QueueFamilyIndices indices = findQueueFamilies(physical_device);
 
         // Specify queue to be created
         VkDeviceQueueCreateInfo queueCreateInfo{};
@@ -92,6 +93,10 @@ class VulkanTemplateApp {
         } else {
             createInfo.enabledLayerCount = 0;
         }
+
+        if (vkCreateDevice(physical_device, &createInfo, nullptr, &device) != VK_SUCCESS) {
+            throw std::runtime_error("error: failed to create logical device!");
+        }
     }
 
     /**
@@ -115,12 +120,12 @@ class VulkanTemplateApp {
                 vkGetPhysicalDeviceProperties(device, &deviceProperties);
                 std::cout << "selected GPU: " << deviceProperties.deviceName << "\n";
 
-                physicalDevice = device;
+                physical_device = device;
                 break;
             }
         }
 
-        if (physicalDevice == VK_NULL_HANDLE) {
+        if (physical_device == VK_NULL_HANDLE) {
             throw std::runtime_error("error: could not find a suitable GPU!");
         }
     }
@@ -347,6 +352,8 @@ class VulkanTemplateApp {
         if (enableValidationLayers) {
             DestroyDebugUtilsMessengerEXT(vk_instance, vk_debug_messenger, nullptr);
         }
+
+        vkDestroyDevice(device, nullptr);
 
         vkDestroyInstance(vk_instance, nullptr);
 
