@@ -37,6 +37,7 @@ class VulkanTemplateApp {
     VkInstance vk_instance;
     VkDebugUtilsMessengerEXT vk_debug_messenger;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice device;
 
     /**
      * Initializes the GLFW window.
@@ -57,6 +58,23 @@ class VulkanTemplateApp {
         createVkInstance();
         createVkDebugMessenger();
         pickGPU();
+        createLogicalDevice();
+    }
+
+    void createLogicalDevice() {
+        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+
+        // Specify queue to be created
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+        queueCreateInfo.queueCount = 1;
+
+        // Assign queue priority
+        float queuePriority = 1.0f;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+
+        VkPhysicalDeviceFeatures deviceFeatures{};
     }
 
     /**
