@@ -75,6 +75,11 @@ class VulkanTemplateApp {
 
         for (const auto &device : devices) {
             if (isGPUSuitable(device)) {
+                // Grab basic device properties
+                VkPhysicalDeviceProperties deviceProperties;
+                vkGetPhysicalDeviceProperties(device, &deviceProperties);
+                std::cout << "selected GPU: " << deviceProperties.deviceName << "\n";
+
                 physicalDevice = device;
                 break;
             }
@@ -91,20 +96,9 @@ class VulkanTemplateApp {
      * @returns True if the device is suitable.
      */
     bool isGPUSuitable(VkPhysicalDevice device) {
-        // Basic device properties
-        VkPhysicalDeviceProperties deviceProperties;
-        vkGetPhysicalDeviceProperties(device, &deviceProperties);
+        QueueFamilyIndices indices = findQueueFamilies(device);
 
-        // Optional features
-        VkPhysicalDeviceFeatures deviceFeatures;
-        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-
-        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader) {
-            std::cout << "selected GPU: " << deviceProperties.deviceName << "\n";
-            return true;
-        }
-
-        return false;
+        return indices.isComplete();
     }
 
     /**
@@ -114,6 +108,26 @@ class VulkanTemplateApp {
      */
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
         QueueFamilyIndices indices;
+
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+        int i = 0;
+        for (const auto &queueFamily : queueFamilies) {
+            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                indices.graphicsFamily = i;
+            }
+
+            if (indices.isComplete()) {
+                break;
+            }
+
+            i++;
+        }
+
         // Logic to find queue family indices to populate struct with
         return indices;
     }
