@@ -68,6 +68,7 @@
     "forward_list": "cpp",
     "format": "cpp",
     "optional": "cpp",
-    "*.clang-format": "cpp"
+    "*.clang-format": "cpp",
+    "functional": "cpp"
   }
 }

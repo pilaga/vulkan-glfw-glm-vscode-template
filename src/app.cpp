@@ -90,7 +90,22 @@ class VulkanTemplateApp {
      * @param device The physical device handle.
      * @returns True if the device is suitable.
      */
-    bool isGPUSuitable(VkPhysicalDevice device) { return true; }
+    bool isGPUSuitable(VkPhysicalDevice device) {
+        // Basic device properties
+        VkPhysicalDeviceProperties deviceProperties;
+        vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+        // Optional features
+        VkPhysicalDeviceFeatures deviceFeatures;
+        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader) {
+            std::cout << "selected GPU: " << deviceProperties.deviceName << "\n";
+            return true;
+        }
+
+        return false;
+    }
 
     /**
      * Checks the extensions required by GLFW are available.
