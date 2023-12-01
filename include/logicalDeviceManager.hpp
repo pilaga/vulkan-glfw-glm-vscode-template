@@ -10,11 +10,12 @@
  * Manager class for VK logical device.
  */
 class LogicalDeviceManager {
-   private:
-    VkPhysicalDevice physical_device = VK_NULL_HANDLE;  // vk physical device
+    private:
+        VkPhysicalDevice physical_device = VK_NULL_HANDLE;  // vk physical device
 
-   public:
-    LogicalDeviceManager() { std::cout << "Creating LogicalDeviceManager\n"; }
+    public:
+        LogicalDeviceManager() { std::cout << "Creating LogicalDeviceManager\n"; }
+        ~LogicalDeviceManager() {}
 };
 
 #endif  // _LOGICAL_DEVICE_MANAGER_H_

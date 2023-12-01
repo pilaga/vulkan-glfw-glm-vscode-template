@@ -27,9 +27,9 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
  * Struct used to query VK queue families.
  */
 struct QueueFamilyIndices {
-    Optional<uint32_t> graphicsFamily;
+        Optional<uint32_t> graphicsFamily;
 
-    bool isComplete() { return graphicsFamily.has_value(); }
+        bool isComplete() { return graphicsFamily.has_value(); }
 };
 
 #endif  // _UTILS_H_

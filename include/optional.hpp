@@ -8,16 +8,16 @@
 // Declaration
 template <class T>
 class Optional {
-   private:
-    T element;
-    bool element_exists;
+    private:
+        T element;
+        bool element_exists;
 
-   public:
-    Optional();         // constructor
-    ~Optional();        // destructor
-    void operator=(T);  // assignment
-    bool has_value();
-    T value();
+    public:
+        Optional();         // constructor
+        ~Optional();        // destructor
+        void operator=(T);  // assignment
+        bool has_value();
+        T value();
 };
 
 // PUBLIC methods

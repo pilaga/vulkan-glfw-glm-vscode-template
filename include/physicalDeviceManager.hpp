@@ -10,11 +10,12 @@
  * Manager class for VK physical device.
  */
 class PhysicalDeviceManager {
-   private:
-    VkDevice device;
+    private:
+        VkDevice device;
 
-   public:
-    PhysicalDeviceManager() { std::cout << "Creating PhysicalDeviceManager\n"; }
+    public:
+        PhysicalDeviceManager() { std::cout << "Creating PhysicalDeviceManager\n"; }
+        ~PhysicalDeviceManager() {}
 };
 
 #endif  // _PHYSICAL_DEVICE_MANAGER_H_
