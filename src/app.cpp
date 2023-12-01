@@ -38,7 +38,7 @@ class VulkanTemplateApp {
     VkDebugUtilsMessengerEXT vk_debug_messenger;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;  // Physical device
     VkDevice device;                                    // Logical device
-    VkQueue graphicsQueue;
+    VkQueue graphics_queue;
 
     /**
      * Initializes the GLFW window.
@@ -97,6 +97,8 @@ class VulkanTemplateApp {
         if (vkCreateDevice(physical_device, &createInfo, nullptr, &device) != VK_SUCCESS) {
             throw std::runtime_error("error: failed to create logical device!");
         }
+
+        vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphics_queue);
     }
 
     /**
@@ -157,7 +159,8 @@ class VulkanTemplateApp {
 
         int i = 0;
         for (const auto &queueFamily : queueFamilies) {
-            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            // Check queueFamilyCount > 1 so Intel GPU does no get picked
+            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT && queueFamilyCount > 1) {
                 indices.graphicsFamily = i;
             }
 
