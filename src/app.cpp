@@ -1,5 +1,8 @@
+#define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 
 #include <cstdlib>
 #include <iostream>
@@ -36,6 +39,7 @@ class VulkanTemplateApp {
         GLFWwindow *window;
         VkInstance vk_instance;
         VkDebugUtilsMessengerEXT vk_debug_messenger;
+        VkSurfaceKHR surface;
         VkPhysicalDevice physical_device = VK_NULL_HANDLE;  // Physical device
         VkDevice device;                                    // Logical device
         VkQueue graphics_queue;
@@ -58,8 +62,15 @@ class VulkanTemplateApp {
         void initVulkan() {
             createVkInstance();
             createVkDebugMessenger();
+            createSurface();
             pickGPU();
             createLogicalDevice();
+        }
+
+        void createSurface() {
+            if (glfwCreateWindowSurface(vk_instance, window, nullptr, &surface) != VK_SUCCESS) {
+                throw std::runtime_error("error: failed to create window surface!");
+            }
         }
 
         void createLogicalDevice() {
@@ -357,7 +368,7 @@ class VulkanTemplateApp {
             }
 
             vkDestroyDevice(device, nullptr);
-
+            vkDestroySurfaceKHR(vk_instance, surface, nullptr);
             vkDestroyInstance(vk_instance, nullptr);
 
             glfwDestroyWindow(window);
