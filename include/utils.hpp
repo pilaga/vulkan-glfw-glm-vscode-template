@@ -1,5 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef _UTILS_H_
+#define _UTILS_H_
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -32,4 +32,4 @@ struct QueueFamilyIndices {
     bool isComplete() { return graphicsFamily.has_value(); }
 };
 
-#endif  // UTILS_H
+#endif  // _UTILS_H_
