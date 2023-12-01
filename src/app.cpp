@@ -170,9 +170,17 @@ class VulkanTemplateApp {
 
             int i = 0;
             for (const auto &queueFamily : queueFamilies) {
+                // Check queu family supports graphics
                 // Check queueFamilyCount > 1 so Intel GPU does no get picked
                 if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT && queueFamilyCount > 1) {
                     indices.graphicsFamily = i;
+                }
+
+                // Check device supports window presentation
+                VkBool32 presentSupport = false;
+                vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+                if (presentSupport) {
+                    indices.presentFamily = i;
                 }
 
                 if (indices.isComplete()) {
