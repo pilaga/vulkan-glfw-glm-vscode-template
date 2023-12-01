@@ -6,6 +6,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <set>
 #include <stdexcept>
 #include <vector>
 
@@ -43,6 +44,7 @@ class VulkanTemplateApp {
         VkPhysicalDevice physical_device = VK_NULL_HANDLE;  // Physical device
         VkDevice device;                                    // Logical device
         VkQueue graphics_queue;
+        VkQueue present_queue;
 
         /**
          * Initializes the GLFW window.
@@ -76,15 +78,18 @@ class VulkanTemplateApp {
         void createLogicalDevice() {
             QueueFamilyIndices indices = findQueueFamilies(physical_device);
 
-            // Specify queue to be created
-            VkDeviceQueueCreateInfo queueCreateInfo{};
-            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
-            queueCreateInfo.queueCount = 1;
+            std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+            std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
-            // Assign queue priority
             float queuePriority = 1.0f;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
+            for (uint32_t queueFamily : uniqueQueueFamilies) {
+                VkDeviceQueueCreateInfo queueCreateInfo{};
+                queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+                queueCreateInfo.queueFamilyIndex = queueFamily;
+                queueCreateInfo.queueCount = 1;
+                queueCreateInfo.pQueuePriorities = &queuePriority;
+                queueCreateInfos.push_back(queueCreateInfo);
+            }
 
             // Specify device features, leave empty for now as we don't need anything specific
             VkPhysicalDeviceFeatures deviceFeatures{};
@@ -92,8 +97,8 @@ class VulkanTemplateApp {
             // Create info for the logical device
             VkDeviceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-            createInfo.pQueueCreateInfos = &queueCreateInfo;
-            createInfo.queueCreateInfoCount = 1;
+            createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+            createInfo.pQueueCreateInfos = queueCreateInfos.data();
             createInfo.pEnabledFeatures = &deviceFeatures;
             createInfo.enabledExtensionCount = 0;
 
@@ -110,6 +115,7 @@ class VulkanTemplateApp {
             }
 
             vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphics_queue);
+            vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &present_queue);
         }
 
         /**
