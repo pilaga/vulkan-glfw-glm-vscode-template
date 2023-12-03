@@ -4,7 +4,10 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <vector>
+
 #include "../include/optional.hpp"
+
 
 /**
  * Creates the debug messenger extesion for Vulkan.
@@ -31,6 +34,15 @@ struct QueueFamilyIndices {
         Optional<uint32_t> presentFamily;
 
         bool isComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }
+};
+
+/**
+ * Struct used to store swap chain support details.
+ */
+struct SwapChainSupportDetails {
+        VkSurfaceCapabilitiesKHR capabilities;
+        std::vector<VkSurfaceFormatKHR> formats;
+        std::vector<VkPresentModeKHR> presentModes;
 };
 
 #endif  // _UTILS_H_
