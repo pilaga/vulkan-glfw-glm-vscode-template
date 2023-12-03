@@ -163,7 +163,27 @@ class VulkanTemplateApp {
             return indices.isComplete() && extensionsSupported;
         }
 
-        bool checkDeviceExtensionSupport(VkPhysicalDevice device) { return true; }
+        /**
+         * Checks the device supports the required extensions listed in deviceExtensions variables.
+         * @param device The physical device.
+         * @returns True if the required extensions are supported.
+         */
+        bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
+            uint32_t extensionCount;
+            vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+            std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+            vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+            // Create temp list of required extensions
+            std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+
+            for (const auto &extension : availableExtensions) {
+                requiredExtensions.erase(extension.extensionName);
+            }
+
+            return requiredExtensions.empty();
+        }
 
         /**
          * Find queue families for the specified GPU.
@@ -181,7 +201,7 @@ class VulkanTemplateApp {
 
             int i = 0;
             for (const auto &queueFamily : queueFamilies) {
-                // Check queu family supports graphics
+                // Check queue family supports graphics
                 // Check queueFamilyCount > 1 so Intel GPU does no get picked
                 if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT && queueFamilyCount > 1) {
                     indices.graphicsFamily = i;
