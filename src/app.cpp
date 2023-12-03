@@ -164,6 +164,12 @@ class VulkanTemplateApp {
             return indices.isComplete() && extensionsSupported;
         }
 
+        SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
+            SwapChainSupportDetails details;
+
+            return details;
+        }
+
         /**
          * Checks the device supports the required extensions listed in deviceExtensions variables.
          * @param device The physical device.
