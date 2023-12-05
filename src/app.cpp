@@ -172,6 +172,11 @@ class VulkanTemplateApp {
             return indices.isComplete() && extensionsSupported && swapChainAdequate;
         }
 
+        /**
+         * Retrieves the swap chain support details for the specified device.
+         * @param device The physical device.
+         * @returns The swap chain support details.
+         */
         SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
             SwapChainSupportDetails details;
 
@@ -197,6 +202,11 @@ class VulkanTemplateApp {
 
             return details;
         }
+
+        /**
+         * Picks the best swap chain for surface
+         */
+        VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {}
 
         /**
          * Checks the device supports the required extensions listed in deviceExtensions variables.
