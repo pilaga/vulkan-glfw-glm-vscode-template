@@ -4,8 +4,13 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
+#include <algorithm>
+#include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
+#include <limits>
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <vector>
@@ -237,6 +242,26 @@ class VulkanTemplateApp {
 
             // Return FIFO mode if preferred mode is unavailable
             return VK_PRESENT_MODE_FIFO_KHR;
+        }
+
+        /**
+         * Picks the best available swap extent (resolution of the swap chain images).
+         */
+        VkExtent2D pickSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
+            if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)()) {
+                return capabilities.currentExtent;
+            } else {
+                // Grab the actual resolution from GLFW
+                int width, height;
+                glfwGetFramebufferSize(window, &width, &height);
+                VkExtent2D actualExtent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+
+                actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+                actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+                std::cout << "resolution: (" << actualExtent.width << ", " << actualExtent.height << ")\n";
+                return actualExtent;
+            }
         }
 
         /**

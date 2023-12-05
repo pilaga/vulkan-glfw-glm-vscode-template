@@ -4,10 +4,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <optional>
 #include <vector>
-
-#include "../include/optional.hpp"
-
 
 /**
  * Creates the debug messenger extesion for Vulkan.
@@ -30,8 +28,8 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
  * Struct used to query VK queue families.
  */
 struct QueueFamilyIndices {
-        Optional<uint32_t> graphicsFamily;
-        Optional<uint32_t> presentFamily;
+        std::optional<uint32_t> graphicsFamily;
+        std::optional<uint32_t> presentFamily;
 
         bool isComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }
 };

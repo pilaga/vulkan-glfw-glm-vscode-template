@@ -9,6 +9,7 @@
       "args": [
         "/Zi",
         "/EHsc",
+        "/std:c++17",
         "/nologo",
         "/Fe:",
         "${workspaceFolder}\\bin\\${fileBasenameNoExtension}.exe",
