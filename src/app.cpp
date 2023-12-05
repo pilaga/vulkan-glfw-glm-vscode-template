@@ -204,9 +204,22 @@ class VulkanTemplateApp {
         }
 
         /**
-         * Picks the best swap chain for surface
+         * Picks the best available surface format.
+         * @param availableFormats The available surface formats.
+         * @returns The best surface format.
          */
-        VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {}
+        VkSurfaceFormatKHR pickSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
+            // Format - VK_FORMAT_B8G8R8A8_SRGB: BGRA color stored in 8 bit unsigned integer for a total of 32 bits per pixel
+            // Color space - VK_COLOR_SPACE_SRGB_NONLINEAR_KHR: SRGB format for more accurately perceived colors
+            for (const auto &availableFormat : availableFormats) {
+                if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                    return availableFormat;
+                }
+            }
+
+            // If not format matches the above, return the first format
+            return availableFormats[0];
+        }
 
         /**
          * Checks the device supports the required extensions listed in deviceExtensions variables.
