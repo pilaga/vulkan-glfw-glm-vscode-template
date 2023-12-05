@@ -222,6 +222,24 @@ class VulkanTemplateApp {
         }
 
         /**
+         * Picks the best available present mode.
+         * @param availablePresentModes The available surface present modes.
+         * @returns The best present mode.
+         */
+        VkPresentModeKHR pickSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
+            // VK_PRESENT_MODE_FIFO_KHR is guaranteed to be available
+            // VK_PRESENT_MODE_MAILBOX_KHR is a variation of the FIFO mode where images in the queue get replaced if the queue is already full
+            for (const auto &availablePresentMode : availablePresentModes) {
+                if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+                    return availablePresentMode;
+                }
+            }
+
+            // Return FIFO mode if preferred mode is unavailable
+            return VK_PRESENT_MODE_FIFO_KHR;
+        }
+
+        /**
          * Checks the device supports the required extensions listed in deviceExtensions variables.
          * @param device The physical device.
          * @returns True if the required extensions are supported.
