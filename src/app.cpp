@@ -15,7 +15,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "../include/appConfig.hpp"
+#include "../include/config.hpp"
 #include "../include/utils.hpp"
 
 const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
@@ -60,7 +60,7 @@ class VulkanTemplateApp {
             glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);  // Tell GLFW not to create a GL context
             glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);    // Disable window resizing
 
-            window = glfwCreateWindow(AppConfig::WIDTH, AppConfig::HEIGHT, "Vulkan Template", nullptr, nullptr);
+            window = glfwCreateWindow(Config::WIDTH, Config::HEIGHT, "Vulkan Template", nullptr, nullptr);
         }
 
         /**
@@ -152,7 +152,7 @@ class VulkanTemplateApp {
             createInfo.imageColorSpace = surfaceFormat.colorSpace;
             createInfo.imageExtent = extent;
             createInfo.imageArrayLayers = 1;  // should be 1 unless stereoscopic display
-            createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            createInfo.imageUsage = Config::SWAPCHAIN_IMAGE_USAGE;
 
             QueueFamilyIndices indices = findQueueFamilies(physical_device);
             uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -163,14 +163,14 @@ class VulkanTemplateApp {
                 createInfo.pQueueFamilyIndices = queueFamilyIndices;
             } else {
                 createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                createInfo.queueFamilyIndexCount = 0;      // Optional
-                createInfo.pQueueFamilyIndices = nullptr;  // Optional
+                createInfo.queueFamilyIndexCount = 0;
+                createInfo.pQueueFamilyIndices = nullptr;
             }
 
             createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-            createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+            createInfo.compositeAlpha = Config::SWAPCHAIN_COMPOSITE_ALPHA;
             createInfo.presentMode = presentMode;
-            createInfo.clipped = VK_TRUE;
+            createInfo.clipped = Config::SWAPCHAIN_CLIPPED;
             createInfo.oldSwapchain = VK_NULL_HANDLE;
 
             if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swap_chain) != VK_SUCCESS) {
@@ -270,7 +270,7 @@ class VulkanTemplateApp {
             // Format - VK_FORMAT_B8G8R8A8_SRGB: BGRA color stored in 8 bit unsigned integer for a total of 32 bits per pixel
             // Color space - VK_COLOR_SPACE_SRGB_NONLINEAR_KHR: SRGB format for more accurately perceived colors
             for (const auto &availableFormat : availableFormats) {
-                if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                if (availableFormat.format == Config::SURFACE_FORMAT && availableFormat.colorSpace == Config::SURFACE_COLOR_SPACE) {
                     return availableFormat;
                 }
             }
@@ -285,15 +285,13 @@ class VulkanTemplateApp {
          * @returns The best present mode.
          */
         VkPresentModeKHR pickSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
-            // VK_PRESENT_MODE_FIFO_KHR is guaranteed to be available
-            // VK_PRESENT_MODE_MAILBOX_KHR is a variation of the FIFO mode where images in the queue get replaced if the queue is already full
             for (const auto &availablePresentMode : availablePresentModes) {
-                if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+                if (availablePresentMode == Config::PRESENT_MODE) {
                     return availablePresentMode;
                 }
             }
 
-            // Return FIFO mode if preferred mode is unavailable
+            // Return FIFO mode which is guaranteed to be available if preferred mode is unavailable
             return VK_PRESENT_MODE_FIFO_KHR;
         }
 
@@ -359,7 +357,7 @@ class VulkanTemplateApp {
             for (const auto &queueFamily : queueFamilies) {
                 // Check queue family supports graphics
                 // Check queueFamilyCount > 1 so Intel GPU does no get picked
-                if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT && queueFamilyCount > 1) {
+                if (queueFamily.queueFlags & Config::QUEUE_FLAGS && queueFamilyCount > 1) {
                     indices.graphicsFamily = i;
                 }
 
