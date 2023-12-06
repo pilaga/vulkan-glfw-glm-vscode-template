@@ -73,6 +73,7 @@ class VulkanTemplateApp {
             createSurface();
             pickGPU();
             createLogicalDevice();
+            createSwapChain();
         }
 
         void createSurface() {
@@ -123,6 +124,17 @@ class VulkanTemplateApp {
 
             vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphics_queue);
             vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &present_queue);
+        }
+
+        /**
+         * Creates the swap chain using the selected present mode, surface format and extent.
+         */
+        void createSwapChain() {
+            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physical_device);
+
+            VkSurfaceFormatKHR surfaceFormat = pickSwapSurfaceFormat(swapChainSupport.formats);
+            VkPresentModeKHR presentMode = pickSwapPresentMode(swapChainSupport.presentModes);
+            VkExtent2D extent = pickSwapExtent(swapChainSupport.capabilities);
         }
 
         /**
@@ -248,7 +260,9 @@ class VulkanTemplateApp {
          * Picks the best available swap extent (resolution of the swap chain images).
          */
         VkExtent2D pickSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
+            // If currentExtent dimension is defined, used that
             if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)()) {
+                std::cout << "resolution: (" << capabilities.currentExtent.width << ", " << capabilities.currentExtent.height << ")\n";
                 return capabilities.currentExtent;
             } else {
                 // Grab the actual resolution from GLFW
