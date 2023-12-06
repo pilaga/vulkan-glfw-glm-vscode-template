@@ -5,25 +5,30 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
+#include <vector>
 
 /**
  * Used for storing application configuration.
  */
 class Config {
     public:
-        // The window resolution (width, height)
-        static uint32_t WIDTH;
-        static uint32_t HEIGHT;
+        static uint32_t WIDTH;   // The window width
+        static uint32_t HEIGHT;  // The window height
 
-        static VkFormat SURFACE_FORMAT;
-        static VkColorSpaceKHR SURFACE_COLOR_SPACE;
+        static std::vector<const char *> DEVICE_EXTENSIONS;  // The required device extension
 
-        static VkPresentModeKHR PRESENT_MODE;
-        static VkQueueFlags QUEUE_FLAGS;
+        static VkFormat SURFACE_FORMAT;              // The surface format
+        static VkColorSpaceKHR SURFACE_COLOR_SPACE;  // The surface color space
 
-        static VkBool32 SWAPCHAIN_CLIPPED;
-        static VkImageUsageFlags SWAPCHAIN_IMAGE_USAGE;
-        static VkCompositeAlphaFlagBitsKHR SWAPCHAIN_COMPOSITE_ALPHA;
+        static VkPresentModeKHR PRESENT_MODE;  // The present mode
+        static VkQueueFlags QUEUE_FLAGS;       // The queue flags
+
+        static VkBool32 SWAPCHAIN_CLIPPED;                             // True to enable clipping
+        static VkImageUsageFlags SWAPCHAIN_IMAGE_USAGE;                // The swap chain image usage
+        static VkCompositeAlphaFlagBitsKHR SWAPCHAIN_COMPOSITE_ALPHA;  // The swap chain composite alpha
+
+        static bool ENABLE_VALIDATION_LAYERS;                // True to enable validation layers
+        static std::vector<const char *> VALIDATION_LAYERS;  // The required validation layers
 };
 
 #endif  // _CONFIG_H_

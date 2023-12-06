@@ -18,16 +18,6 @@
 #include "../include/config.hpp"
 #include "../include/utils.hpp"
 
-const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
-const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-
-// Only enable validation layers in debug mode
-#ifdef NDEBUG
-const bool enableValidationLayers = false;
-#else
-const bool enable_validation_layers = true;
-#endif
-
 /**
  * Template class implementing Vulkan, GLFW for window creation & GLM for algebraic functions.
  */
@@ -106,13 +96,13 @@ class VulkanTemplateApp {
             createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
             createInfo.pQueueCreateInfos = queueCreateInfos.data();
             createInfo.pEnabledFeatures = &deviceFeatures;
-            createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-            createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+            createInfo.enabledExtensionCount = static_cast<uint32_t>(Config::DEVICE_EXTENSIONS.size());
+            createInfo.ppEnabledExtensionNames = Config::DEVICE_EXTENSIONS.data();
 
             // Add validation layer if enabled
-            if (enable_validation_layers) {
-                createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-                createInfo.ppEnabledLayerNames = validationLayers.data();
+            if (Config::ENABLE_VALIDATION_LAYERS) {
+                createInfo.enabledLayerCount = static_cast<uint32_t>(Config::VALIDATION_LAYERS.size());
+                createInfo.ppEnabledLayerNames = Config::VALIDATION_LAYERS.data();
             } else {
                 createInfo.enabledLayerCount = 0;
             }
@@ -330,7 +320,7 @@ class VulkanTemplateApp {
             vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
             // Create temp list of required extensions
-            std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+            std::set<std::string> requiredExtensions(Config::DEVICE_EXTENSIONS.begin(), Config::DEVICE_EXTENSIONS.end());
 
             for (const auto &extension : availableExtensions) {
                 requiredExtensions.erase(extension.extensionName);
@@ -425,7 +415,7 @@ class VulkanTemplateApp {
             std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
             // Manually add the validation layer extension
-            if (enable_validation_layers) {
+            if (Config::ENABLE_VALIDATION_LAYERS) {
                 extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
             }
 
@@ -449,7 +439,7 @@ class VulkanTemplateApp {
             }
 
             // Check required layer is available
-            for (const char *layerName : validationLayers) {
+            for (const char *layerName : Config::VALIDATION_LAYERS) {
                 bool layerFound = false;
 
                 for (const auto &layerProperties : availableLayers) {
@@ -484,13 +474,13 @@ class VulkanTemplateApp {
             createInfo.pApplicationInfo = &appInfo;
 
             // Add validation layer if enabled
-            if (enable_validation_layers) {
+            if (Config::ENABLE_VALIDATION_LAYERS) {
                 if (!checkVKValidationLayerSupport()) {
                     throw std::runtime_error("error: required validation layer not available!");
                 }
 
-                createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-                createInfo.ppEnabledLayerNames = validationLayers.data();
+                createInfo.enabledLayerCount = static_cast<uint32_t>(Config::VALIDATION_LAYERS.size());
+                createInfo.ppEnabledLayerNames = Config::VALIDATION_LAYERS.data();
 
                 // Add validation debug callback for instanciationg
                 VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
@@ -533,7 +523,7 @@ class VulkanTemplateApp {
          * Creates a debug messenger using the vkDebugCallback function.
          */
         void createVkDebugMessenger() {
-            if (!enable_validation_layers) return;
+            if (!Config::ENABLE_VALIDATION_LAYERS) return;
 
             VkDebugUtilsMessengerCreateInfoEXT createInfo{};
             populateVkDebugMessengerCreateInfo(createInfo);
@@ -556,7 +546,7 @@ class VulkanTemplateApp {
          * Clean-up: destroy VK instance and GLFW window.
          */
         void cleanup() {
-            if (enable_validation_layers) {
+            if (Config::ENABLE_VALIDATION_LAYERS) {
                 DestroyDebugUtilsMessengerEXT(vk_instance, vk_debug_messenger, nullptr);
             }
 
