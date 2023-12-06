@@ -135,6 +135,15 @@ class VulkanTemplateApp {
             VkSurfaceFormatKHR surfaceFormat = pickSwapSurfaceFormat(swapChainSupport.formats);
             VkPresentModeKHR presentMode = pickSwapPresentMode(swapChainSupport.presentModes);
             VkExtent2D extent = pickSwapExtent(swapChainSupport.capabilities);
+
+            // It is recommended to request at least 1 more image than the minimum
+            uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+
+            // Make sure we don't go over the maxImageCount for the swap chain
+            // 0 is a special value that means there is no max
+            if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
+                imageCount = swapChainSupport.capabilities.maxImageCount;
+            }
         }
 
         /**
