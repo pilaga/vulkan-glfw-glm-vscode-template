@@ -15,10 +15,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include "../include/appConfig.hpp"
 #include "../include/utils.hpp"
-
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
 
 const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
@@ -62,7 +60,7 @@ class VulkanTemplateApp {
             glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);  // Tell GLFW not to create a GL context
             glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);    // Disable window resizing
 
-            window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan Template", nullptr, nullptr);
+            window = glfwCreateWindow(AppConfig::WIDTH, AppConfig::HEIGHT, "Vulkan Template", nullptr, nullptr);
         }
 
         /**
