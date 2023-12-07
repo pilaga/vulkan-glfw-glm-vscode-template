@@ -39,7 +39,10 @@ class VulkanTemplateApp {
         VkDevice device;                                    // Logical device
         VkQueue graphics_queue;
         VkQueue present_queue;
-        VkSwapchainKHR swap_chain;
+        VkSwapchainKHR swapchain;
+        std::vector<VkImage> swapchain_images;
+        VkFormat swapchain_format;
+        VkExtent2D swapchain_extent;
 
         /**
          * Initializes the GLFW window.
@@ -119,27 +122,27 @@ class VulkanTemplateApp {
          * Creates the swap chain using the selected present mode, surface format and extent.
          */
         void createSwapChain() {
-            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physical_device);
+            SwapChainSupportDetails swapchain_support = querySwapChainSupport(physical_device);
 
-            VkSurfaceFormatKHR surfaceFormat = pickSwapSurfaceFormat(swapChainSupport.formats);
-            VkPresentModeKHR presentMode = pickSwapPresentMode(swapChainSupport.presentModes);
-            VkExtent2D extent = pickSwapExtent(swapChainSupport.capabilities);
+            VkSurfaceFormatKHR surface_format = pickSwapSurfaceFormat(swapchain_support.formats);
+            VkPresentModeKHR present_mode = pickSwapPresentMode(swapchain_support.presentModes);
+            VkExtent2D extent = pickSwapExtent(swapchain_support.capabilities);
 
             // It is recommended to request at least 1 more image than the minimum
-            uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+            uint32_t imageCount = swapchain_support.capabilities.minImageCount + 1;
 
             // Make sure we don't go over the maxImageCount for the swap chain
             // 0 is a special value that means there is no max
-            if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
-                imageCount = swapChainSupport.capabilities.maxImageCount;
+            if (swapchain_support.capabilities.maxImageCount > 0 && imageCount > swapchain_support.capabilities.maxImageCount) {
+                imageCount = swapchain_support.capabilities.maxImageCount;
             }
 
             VkSwapchainCreateInfoKHR createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
             createInfo.surface = surface;
             createInfo.minImageCount = imageCount;
-            createInfo.imageFormat = surfaceFormat.format;
-            createInfo.imageColorSpace = surfaceFormat.colorSpace;
+            createInfo.imageFormat = surface_format.format;
+            createInfo.imageColorSpace = surface_format.colorSpace;
             createInfo.imageExtent = extent;
             createInfo.imageArrayLayers = 1;  // should be 1 unless stereoscopic display
             createInfo.imageUsage = Config::SWAPCHAIN_IMAGE_USAGE;
@@ -157,15 +160,24 @@ class VulkanTemplateApp {
                 createInfo.pQueueFamilyIndices = nullptr;
             }
 
-            createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+            createInfo.preTransform = swapchain_support.capabilities.currentTransform;
             createInfo.compositeAlpha = Config::SWAPCHAIN_COMPOSITE_ALPHA;
-            createInfo.presentMode = presentMode;
+            createInfo.presentMode = present_mode;
             createInfo.clipped = Config::SWAPCHAIN_CLIPPED;
             createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-            if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swap_chain) != VK_SUCCESS) {
+            if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
                 throw std::runtime_error("error: failed to create swap chain!");
             }
+
+            // Retrieve handle to the swap chain images
+            vkGetSwapchainImagesKHR(device, swapchain, &imageCount, nullptr);
+            swapchain_images.resize(imageCount);
+            vkGetSwapchainImagesKHR(device, swapchain, &imageCount, swapchain_images.data());
+
+            // Store format and extent for later use
+            swapchain_extent = extent;
+            swapchain_format = surface_format.format;
         }
 
         /**
@@ -550,7 +562,7 @@ class VulkanTemplateApp {
                 DestroyDebugUtilsMessengerEXT(vk_instance, vk_debug_messenger, nullptr);
             }
 
-            vkDestroySwapchainKHR(device, swap_chain, nullptr);
+            vkDestroySwapchainKHR(device, swapchain, nullptr);
             vkDestroyDevice(device, nullptr);
             vkDestroySurfaceKHR(vk_instance, surface, nullptr);
             vkDestroyInstance(vk_instance, nullptr);
