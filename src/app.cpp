@@ -43,6 +43,7 @@ class VulkanTemplateApp {
         std::vector<VkImage> swapchain_images;
         VkFormat swapchain_format;
         VkExtent2D swapchain_extent;
+        std::vector<VkImageView> swapchain_img_views;
 
         /**
          * Initializes the GLFW window.
@@ -66,6 +67,7 @@ class VulkanTemplateApp {
             pickGPU();
             createLogicalDevice();
             createSwapChain();
+            createImageViews();
         }
 
         void createSurface() {
@@ -74,43 +76,45 @@ class VulkanTemplateApp {
             }
         }
 
+        void createImageViews() {}
+
         void createLogicalDevice() {
             QueueFamilyIndices indices = findQueueFamilies(physical_device);
 
-            std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-            std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+            std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+            std::set<uint32_t> unique_queue_families = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
-            float queuePriority = 1.0f;
-            for (uint32_t queueFamily : uniqueQueueFamilies) {
-                VkDeviceQueueCreateInfo queueCreateInfo{};
-                queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-                queueCreateInfo.queueFamilyIndex = queueFamily;
-                queueCreateInfo.queueCount = 1;
-                queueCreateInfo.pQueuePriorities = &queuePriority;
-                queueCreateInfos.push_back(queueCreateInfo);
+            float queue_priority = 1.0f;
+            for (uint32_t queue_family : unique_queue_families) {
+                VkDeviceQueueCreateInfo queue_create_info{};
+                queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+                queue_create_info.queueFamilyIndex = queue_family;
+                queue_create_info.queueCount = 1;
+                queue_create_info.pQueuePriorities = &queue_priority;
+                queue_create_infos.push_back(queue_create_info);
             }
 
             // Specify device features, leave empty for now as we don't need anything specific
             VkPhysicalDeviceFeatures deviceFeatures{};
 
             // Create info for the logical device
-            VkDeviceCreateInfo createInfo{};
-            createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-            createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-            createInfo.pQueueCreateInfos = queueCreateInfos.data();
-            createInfo.pEnabledFeatures = &deviceFeatures;
-            createInfo.enabledExtensionCount = static_cast<uint32_t>(Config::DEVICE_EXTENSIONS.size());
-            createInfo.ppEnabledExtensionNames = Config::DEVICE_EXTENSIONS.data();
+            VkDeviceCreateInfo create_info{};
+            create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+            create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
+            create_info.pQueueCreateInfos = queue_create_infos.data();
+            create_info.pEnabledFeatures = &deviceFeatures;
+            create_info.enabledExtensionCount = static_cast<uint32_t>(Config::DEVICE_EXTENSIONS.size());
+            create_info.ppEnabledExtensionNames = Config::DEVICE_EXTENSIONS.data();
 
             // Add validation layer if enabled
             if (Config::ENABLE_VALIDATION_LAYERS) {
-                createInfo.enabledLayerCount = static_cast<uint32_t>(Config::VALIDATION_LAYERS.size());
-                createInfo.ppEnabledLayerNames = Config::VALIDATION_LAYERS.data();
+                create_info.enabledLayerCount = static_cast<uint32_t>(Config::VALIDATION_LAYERS.size());
+                create_info.ppEnabledLayerNames = Config::VALIDATION_LAYERS.data();
             } else {
-                createInfo.enabledLayerCount = 0;
+                create_info.enabledLayerCount = 0;
             }
 
-            if (vkCreateDevice(physical_device, &createInfo, nullptr, &device) != VK_SUCCESS) {
+            if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS) {
                 throw std::runtime_error("error: failed to create logical device!");
             }
 
