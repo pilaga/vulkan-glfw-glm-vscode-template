@@ -297,31 +297,31 @@ class VulkanTemplateApp {
 
         /**
          * Picks the best available surface format.
-         * @param availableFormats The available surface formats.
+         * @param available_formats The available surface formats.
          * @returns The best surface format.
          */
-        VkSurfaceFormatKHR pickSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
+        VkSurfaceFormatKHR pickSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &available_formats) {
             // Format - VK_FORMAT_B8G8R8A8_SRGB: BGRA color stored in 8 bit unsigned integer for a total of 32 bits per pixel
             // Color space - VK_COLOR_SPACE_SRGB_NONLINEAR_KHR: SRGB format for more accurately perceived colors
-            for (const auto &availableFormat : availableFormats) {
-                if (availableFormat.format == Config::SURFACE_FORMAT && availableFormat.colorSpace == Config::SURFACE_COLOR_SPACE) {
-                    return availableFormat;
+            for (const auto &format : available_formats) {
+                if (format.format == Config::SURFACE_FORMAT && format.colorSpace == Config::SURFACE_COLOR_SPACE) {
+                    return format;
                 }
             }
 
             // If not format matches the above, return the first format
-            return availableFormats[0];
+            return available_formats[0];
         }
 
         /**
          * Picks the best available present mode.
-         * @param availablePresentModes The available surface present modes.
+         * @param available_present_modes The available surface present modes.
          * @returns The best present mode.
          */
-        VkPresentModeKHR pickSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
-            for (const auto &availablePresentMode : availablePresentModes) {
-                if (availablePresentMode == Config::PRESENT_MODE) {
-                    return availablePresentMode;
+        VkPresentModeKHR pickSwapPresentMode(const std::vector<VkPresentModeKHR> &available_present_modes) {
+            for (const auto &present_mode : available_present_modes) {
+                if (present_mode == Config::PRESENT_MODE) {
+                    return present_mode;
                 }
             }
 
@@ -341,13 +341,13 @@ class VulkanTemplateApp {
                 // Grab the actual resolution from GLFW
                 int width, height;
                 glfwGetFramebufferSize(window, &width, &height);
-                VkExtent2D actualExtent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+                VkExtent2D actual_extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 
-                actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-                actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+                actual_extent.width = std::clamp(actual_extent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+                actual_extent.height = std::clamp(actual_extent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
-                std::cout << "resolution: (" << actualExtent.width << ", " << actualExtent.height << ")\n";
-                return actualExtent;
+                std::cout << "resolution: (" << actual_extent.width << ", " << actual_extent.height << ")\n";
+                return actual_extent;
             }
         }
 
@@ -357,20 +357,20 @@ class VulkanTemplateApp {
          * @returns True if the required extensions are supported.
          */
         bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
-            uint32_t extensionCount;
-            vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+            uint32_t extension_count;
+            vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
 
-            std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-            vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+            std::vector<VkExtensionProperties> exension_list(extension_count);
+            vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, exension_list.data());
 
             // Create temp list of required extensions
-            std::set<std::string> requiredExtensions(Config::DEVICE_EXTENSIONS.begin(), Config::DEVICE_EXTENSIONS.end());
+            std::set<std::string> required_extensions(Config::DEVICE_EXTENSIONS.begin(), Config::DEVICE_EXTENSIONS.end());
 
-            for (const auto &extension : availableExtensions) {
-                requiredExtensions.erase(extension.extensionName);
+            for (const auto &extension : exension_list) {
+                required_extensions.erase(extension.extensionName);
             }
 
-            return requiredExtensions.empty();
+            return required_extensions.empty();
         }
 
         /**
@@ -381,24 +381,24 @@ class VulkanTemplateApp {
         QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
             QueueFamilyIndices indices;
 
-            uint32_t queueFamilyCount = 0;
-            vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+            uint32_t queue_family_count = 0;
+            vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
 
-            std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-            vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+            std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+            vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
 
             int i = 0;
-            for (const auto &queueFamily : queueFamilies) {
+            for (const auto &queueFamily : queue_families) {
                 // Check queue family supports graphics
                 // Check queueFamilyCount > 1 so Intel GPU does no get picked
-                if (queueFamily.queueFlags & Config::QUEUE_FLAGS && queueFamilyCount > 1) {
+                if (queueFamily.queueFlags & Config::QUEUE_FLAGS && queue_family_count > 1) {
                     indices.graphicsFamily = i;
                 }
 
                 // Check device supports window presentation
-                VkBool32 presentSupport = false;
-                vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-                if (presentSupport) {
+                VkBool32 present_support = false;
+                vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &present_support);
+                if (present_support) {
                     indices.presentFamily = i;
                 }
 
