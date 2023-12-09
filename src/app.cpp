@@ -68,9 +68,15 @@ class VulkanTemplateApp {
             createLogicalDevice();
             createSwapChain();
             createImageViews();
+            createGraphicsPipeline();
         }
 
         /**
+         * Creates the graphics pipeline.
+         */
+        void createGraphicsPipeline() {}
+
+        /*
          * Creates the GLFW window surface.
          */
         void createSurface() {
