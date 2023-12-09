@@ -70,12 +70,18 @@ class VulkanTemplateApp {
             createImageViews();
         }
 
+        /**
+         * Creates the GLFW window surface.
+         */
         void createSurface() {
             if (glfwCreateWindowSurface(vk_instance, window, nullptr, &surface) != VK_SUCCESS) {
                 throw std::runtime_error("error: failed to create window surface!");
             }
         }
 
+        /**
+         * Creates an image view for each image in the swap chain.
+         */
         void createImageViews() {
             // Resize view list to fit all the images
             swapchain_img_views.resize(swapchain_images.size());
@@ -106,6 +112,9 @@ class VulkanTemplateApp {
             }
         }
 
+        /**
+         * Creates the logical device.
+         */
         void createLogicalDevice() {
             QueueFamilyIndices indices = findQueueFamilies(physical_device);
 
@@ -122,15 +131,12 @@ class VulkanTemplateApp {
                 queue_create_infos.push_back(queue_create_info);
             }
 
-            // Specify device features, leave empty for now as we don't need anything specific
-            VkPhysicalDeviceFeatures deviceFeatures{};
-
             // Create info for the logical device
             VkDeviceCreateInfo create_info{};
             create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
             create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
             create_info.pQueueCreateInfos = queue_create_infos.data();
-            create_info.pEnabledFeatures = &deviceFeatures;
+            create_info.pEnabledFeatures = &VkPhysicalDeviceFeatures{};  // Leave empty for now
             create_info.enabledExtensionCount = static_cast<uint32_t>(Config::DEVICE_EXTENSIONS.size());
             create_info.ppEnabledExtensionNames = Config::DEVICE_EXTENSIONS.data();
 
@@ -155,24 +161,23 @@ class VulkanTemplateApp {
          */
         void createSwapChain() {
             SwapChainSupportDetails swapchain_support = querySwapChainSupport(physical_device);
-
             VkSurfaceFormatKHR surface_format = pickSwapSurfaceFormat(swapchain_support.formats);
             VkPresentModeKHR present_mode = pickSwapPresentMode(swapchain_support.presentModes);
             VkExtent2D extent = pickSwapExtent(swapchain_support.capabilities);
 
             // It is recommended to request at least 1 more image than the minimum
-            uint32_t imageCount = swapchain_support.capabilities.minImageCount + 1;
+            uint32_t img_count = swapchain_support.capabilities.minImageCount + 1;
 
             // Make sure we don't go over the maxImageCount for the swap chain
             // 0 is a special value that means there is no max
-            if (swapchain_support.capabilities.maxImageCount > 0 && imageCount > swapchain_support.capabilities.maxImageCount) {
-                imageCount = swapchain_support.capabilities.maxImageCount;
+            if (swapchain_support.capabilities.maxImageCount > 0 && img_count > swapchain_support.capabilities.maxImageCount) {
+                img_count = swapchain_support.capabilities.maxImageCount;
             }
 
             VkSwapchainCreateInfoKHR create_info{};
             create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
             create_info.surface = surface;
-            create_info.minImageCount = imageCount;
+            create_info.minImageCount = img_count;
             create_info.imageFormat = surface_format.format;
             create_info.imageColorSpace = surface_format.colorSpace;
             create_info.imageExtent = extent;
@@ -203,9 +208,9 @@ class VulkanTemplateApp {
             }
 
             // Retrieve handle to the swap chain images
-            vkGetSwapchainImagesKHR(device, swapchain, &imageCount, nullptr);
-            swapchain_images.resize(imageCount);
-            vkGetSwapchainImagesKHR(device, swapchain, &imageCount, swapchain_images.data());
+            vkGetSwapchainImagesKHR(device, swapchain, &img_count, nullptr);
+            swapchain_images.resize(img_count);
+            vkGetSwapchainImagesKHR(device, swapchain, &img_count, swapchain_images.data());
 
             // Store format and extent for later use
             swapchain_extent = extent;
@@ -216,22 +221,22 @@ class VulkanTemplateApp {
          * Picks the first GPU that provides VK support and assigns its handle to <physicalDevice> class member.
          */
         void pickGPU() {
-            uint32_t deviceCount = 0;
-            vkEnumeratePhysicalDevices(vk_instance, &deviceCount, nullptr);
+            uint32_t device_count = 0;
+            vkEnumeratePhysicalDevices(vk_instance, &device_count, nullptr);
 
-            if (deviceCount == 0) {
+            if (device_count == 0) {
                 throw std::runtime_error("error: could not find a GPU with VK support!");
             }
 
-            std::vector<VkPhysicalDevice> devices(deviceCount);
-            vkEnumeratePhysicalDevices(vk_instance, &deviceCount, devices.data());
+            std::vector<VkPhysicalDevice> devices(device_count);
+            vkEnumeratePhysicalDevices(vk_instance, &device_count, devices.data());
 
             for (const auto &device : devices) {
                 if (isGPUSuitable(device)) {
                     // Grab basic device properties
-                    VkPhysicalDeviceProperties deviceProperties;
-                    vkGetPhysicalDeviceProperties(device, &deviceProperties);
-                    std::cout << "selected GPU: " << deviceProperties.deviceName << "\n";
+                    VkPhysicalDeviceProperties properties;
+                    vkGetPhysicalDeviceProperties(device, &properties);
+                    std::cout << "selected GPU: " << properties.deviceName << "\n";
 
                     physical_device = device;
                     break;
@@ -252,16 +257,16 @@ class VulkanTemplateApp {
             QueueFamilyIndices indices = findQueueFamilies(device);
 
             // Check required extensions are supported
-            bool extensionsSupported = checkDeviceExtensionSupport(device);
+            bool extensions_supported = checkDeviceExtensionSupport(device);
 
             // Check swap chain support is adequate
-            bool swapChainAdequate = false;
-            if (extensionsSupported) {
-                SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
-                swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+            bool swapchain_suitable = false;
+            if (extensions_supported) {
+                SwapChainSupportDetails swapchain_support = querySwapChainSupport(device);
+                swapchain_suitable = !swapchain_support.formats.empty() && !swapchain_support.presentModes.empty();
             }
 
-            return indices.isComplete() && extensionsSupported && swapChainAdequate;
+            return indices.isComplete() && extensions_supported && swapchain_suitable;
         }
 
         /**
@@ -275,21 +280,21 @@ class VulkanTemplateApp {
             vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
 
             // Query the supported surface formats
-            uint32_t formatCount;
-            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+            uint32_t format_count;
+            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, nullptr);
 
-            if (formatCount != 0) {
-                details.formats.resize(formatCount);
-                vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+            if (format_count != 0) {
+                details.formats.resize(format_count);
+                vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, details.formats.data());
             }
 
             // Query the supported presentation modes
-            uint32_t presentModeCount;
-            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+            uint32_t present_mode_count;
+            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, nullptr);
 
-            if (presentModeCount != 0) {
-                details.presentModes.resize(presentModeCount);
-                vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+            if (present_mode_count != 0) {
+                details.presentModes.resize(present_mode_count);
+                vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, details.presentModes.data());
             }
 
             return details;
@@ -297,29 +302,29 @@ class VulkanTemplateApp {
 
         /**
          * Picks the best available surface format.
-         * @param available_formats The available surface formats.
+         * @param availableFormats The available surface formats.
          * @returns The best surface format.
          */
-        VkSurfaceFormatKHR pickSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &available_formats) {
+        VkSurfaceFormatKHR pickSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
             // Format - VK_FORMAT_B8G8R8A8_SRGB: BGRA color stored in 8 bit unsigned integer for a total of 32 bits per pixel
             // Color space - VK_COLOR_SPACE_SRGB_NONLINEAR_KHR: SRGB format for more accurately perceived colors
-            for (const auto &format : available_formats) {
+            for (const auto &format : availableFormats) {
                 if (format.format == Config::SURFACE_FORMAT && format.colorSpace == Config::SURFACE_COLOR_SPACE) {
                     return format;
                 }
             }
 
             // If not format matches the above, return the first format
-            return available_formats[0];
+            return availableFormats[0];
         }
 
         /**
          * Picks the best available present mode.
-         * @param available_present_modes The available surface present modes.
-         * @returns The best present mode.
+         * @param availablePresentModes The available surface present modes.
+         * @returns The best present mode, or the default FIFO present mode.
          */
-        VkPresentModeKHR pickSwapPresentMode(const std::vector<VkPresentModeKHR> &available_present_modes) {
-            for (const auto &present_mode : available_present_modes) {
+        VkPresentModeKHR pickSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
+            for (const auto &present_mode : availablePresentModes) {
                 if (present_mode == Config::PRESENT_MODE) {
                     return present_mode;
                 }
@@ -365,7 +370,6 @@ class VulkanTemplateApp {
 
             // Create temp list of required extensions
             std::set<std::string> required_extensions(Config::DEVICE_EXTENSIONS.begin(), Config::DEVICE_EXTENSIONS.end());
-
             for (const auto &extension : exension_list) {
                 required_extensions.erase(extension.extensionName);
             }
@@ -388,10 +392,10 @@ class VulkanTemplateApp {
             vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
 
             int i = 0;
-            for (const auto &queueFamily : queue_families) {
+            for (const auto &queue_family : queue_families) {
                 // Check queue family supports graphics
                 // Check queueFamilyCount > 1 so Intel GPU does no get picked
-                if (queueFamily.queueFlags & Config::QUEUE_FLAGS && queue_family_count > 1) {
+                if (queue_family.queueFlags & Config::QUEUE_FLAGS && queue_family_count > 1) {
                     indices.graphicsFamily = i;
                 }
 
@@ -421,25 +425,25 @@ class VulkanTemplateApp {
          */
         bool checkGlfwExtensionsAvailability(const char **requiredExtensions, uint32_t requiredCount) {
             // Retrieve available extensions count and list
-            uint32_t extensionCount = 0;
-            vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+            uint32_t extension_count = 0;
+            vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
 
-            std::vector<VkExtensionProperties> extensions(extensionCount);
-            vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+            std::vector<VkExtensionProperties> extensions(extension_count);
+            vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data());
 
-            uint32_t availableCount = 0;
-            std::cout << "available VK extensions (" << extensionCount << "):\n";
+            uint32_t available_count = 0;
+            std::cout << "available VK extensions (" << extension_count << "):\n";
 
             // Check if required extension exists
             for (const auto &extension : extensions) {
                 for (int i = 0; i < requiredCount; i++) {
-                    if (strcmp(requiredExtensions[i], extension.extensionName) == 0) availableCount++;
+                    if (strcmp(requiredExtensions[i], extension.extensionName) == 0) available_count++;
                 }
 
                 std::cout << '\t' << extension.extensionName << '\n';
             }
 
-            return availableCount == requiredCount;
+            return available_count == requiredCount;
         }
 
         /**
@@ -447,16 +451,16 @@ class VulkanTemplateApp {
          * @returns The list of required extensions.
          */
         std::vector<const char *> getRequiredExtensions() {
-            uint32_t glfwExtensionCount = 0;
-            const char **glfwExtensions;
-            glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+            uint32_t glfw_extension_count = 0;
+            const char **glfw_extensions;
+            glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
 
             // Abort if required extensions are unavailable
-            if (!checkGlfwExtensionsAvailability(glfwExtensions, glfwExtensionCount)) {
+            if (!checkGlfwExtensionsAvailability(glfw_extensions, glfw_extension_count)) {
                 throw std::runtime_error("error: required GLFW extensions are not available!");
             };
 
-            std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+            std::vector<const char *> extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
 
             // Manually add the validation layer extension
             if (Config::ENABLE_VALIDATION_LAYERS) {
@@ -471,29 +475,29 @@ class VulkanTemplateApp {
          * @returns True if validation layers are supported.
          */
         bool checkVKValidationLayerSupport() {
-            uint32_t layerCount = 0;
-            vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+            uint32_t layer_count = 0;
+            vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
-            std::vector<VkLayerProperties> availableLayers(layerCount);
-            vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+            std::vector<VkLayerProperties> available_layers(layer_count);
+            vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
 
-            std::cout << "available VK validation layers (" << layerCount << "):\n";
-            for (const auto &availableLayer : availableLayers) {
-                std::cout << '\t' << availableLayer.layerName << '\n';
+            std::cout << "available VK validation layers (" << layer_count << "):\n";
+            for (const auto &layer : available_layers) {
+                std::cout << '\t' << layer.layerName << '\n';
             }
 
             // Check required layer is available
-            for (const char *layerName : Config::VALIDATION_LAYERS) {
-                bool layerFound = false;
+            for (const char *layer_name : Config::VALIDATION_LAYERS) {
+                bool layer_found = false;
 
-                for (const auto &layerProperties : availableLayers) {
-                    if (strcmp(layerName, layerProperties.layerName) == 0) {
-                        layerFound = true;
+                for (const auto &layer_properties : available_layers) {
+                    if (strcmp(layer_name, layer_properties.layerName) == 0) {
+                        layer_found = true;
                         break;
                     }
                 }
 
-                if (!layerFound) return false;
+                if (!layer_found) return false;
             }
 
             return true;
@@ -504,18 +508,18 @@ class VulkanTemplateApp {
          */
         void createVkInstance() {
             // Create VK application info structure
-            VkApplicationInfo appInfo{};
-            appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-            appInfo.pApplicationName = "Vulkan Template";
-            appInfo.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
-            appInfo.pEngineName = "No Engine";
-            appInfo.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
-            appInfo.apiVersion = VK_API_VERSION_1_0;
+            VkApplicationInfo app_info{};
+            app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+            app_info.pApplicationName = "Vulkan Template";
+            app_info.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
+            app_info.pEngineName = "No Engine";
+            app_info.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
+            app_info.apiVersion = VK_API_VERSION_1_0;
 
             // Create info structure
             VkInstanceCreateInfo create_info{};
             create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-            create_info.pApplicationInfo = &appInfo;
+            create_info.pApplicationInfo = &app_info;
 
             // Add validation layer if enabled
             if (Config::ENABLE_VALIDATION_LAYERS) {
