@@ -76,7 +76,35 @@ class VulkanTemplateApp {
             }
         }
 
-        void createImageViews() {}
+        void createImageViews() {
+            // Resize view list to fit all the images
+            swapchain_img_views.resize(swapchain_images.size());
+
+            // Iterate over all the swap chain images
+            for (size_t i = 0; i < swapchain_images.size(); i++) {
+                VkImageViewCreateInfo create_info{};
+                create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                create_info.image = swapchain_images[i];
+                create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                create_info.format = swapchain_format;
+
+                // Keep default color channel mapping
+                create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+                create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+                create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+                create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+                create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                create_info.subresourceRange.baseMipLevel = 0;
+                create_info.subresourceRange.levelCount = 1;
+                create_info.subresourceRange.baseArrayLayer = 0;
+                create_info.subresourceRange.layerCount = 1;
+
+                if (vkCreateImageView(device, &create_info, nullptr, &swapchain_img_views[i]) != VK_SUCCESS) {
+                    throw std::runtime_error("error: failed to create image views!");
+                }
+            }
+        }
 
         void createLogicalDevice() {
             QueueFamilyIndices indices = findQueueFamilies(physical_device);
@@ -141,36 +169,36 @@ class VulkanTemplateApp {
                 imageCount = swapchain_support.capabilities.maxImageCount;
             }
 
-            VkSwapchainCreateInfoKHR createInfo{};
-            createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-            createInfo.surface = surface;
-            createInfo.minImageCount = imageCount;
-            createInfo.imageFormat = surface_format.format;
-            createInfo.imageColorSpace = surface_format.colorSpace;
-            createInfo.imageExtent = extent;
-            createInfo.imageArrayLayers = 1;  // should be 1 unless stereoscopic display
-            createInfo.imageUsage = Config::SWAPCHAIN_IMAGE_USAGE;
+            VkSwapchainCreateInfoKHR create_info{};
+            create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+            create_info.surface = surface;
+            create_info.minImageCount = imageCount;
+            create_info.imageFormat = surface_format.format;
+            create_info.imageColorSpace = surface_format.colorSpace;
+            create_info.imageExtent = extent;
+            create_info.imageArrayLayers = 1;  // should be 1 unless stereoscopic display
+            create_info.imageUsage = Config::SWAPCHAIN_IMAGE_USAGE;
 
             QueueFamilyIndices indices = findQueueFamilies(physical_device);
             uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
             if (indices.graphicsFamily != indices.presentFamily) {
-                createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-                createInfo.queueFamilyIndexCount = 2;
-                createInfo.pQueueFamilyIndices = queueFamilyIndices;
+                create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+                create_info.queueFamilyIndexCount = 2;
+                create_info.pQueueFamilyIndices = queueFamilyIndices;
             } else {
-                createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                createInfo.queueFamilyIndexCount = 0;
-                createInfo.pQueueFamilyIndices = nullptr;
+                create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+                create_info.queueFamilyIndexCount = 0;
+                create_info.pQueueFamilyIndices = nullptr;
             }
 
-            createInfo.preTransform = swapchain_support.capabilities.currentTransform;
-            createInfo.compositeAlpha = Config::SWAPCHAIN_COMPOSITE_ALPHA;
-            createInfo.presentMode = present_mode;
-            createInfo.clipped = Config::SWAPCHAIN_CLIPPED;
-            createInfo.oldSwapchain = VK_NULL_HANDLE;
+            create_info.preTransform = swapchain_support.capabilities.currentTransform;
+            create_info.compositeAlpha = Config::SWAPCHAIN_COMPOSITE_ALPHA;
+            create_info.presentMode = present_mode;
+            create_info.clipped = Config::SWAPCHAIN_CLIPPED;
+            create_info.oldSwapchain = VK_NULL_HANDLE;
 
-            if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
+            if (vkCreateSwapchainKHR(device, &create_info, nullptr, &swapchain) != VK_SUCCESS) {
                 throw std::runtime_error("error: failed to create swap chain!");
             }
 
@@ -485,9 +513,9 @@ class VulkanTemplateApp {
             appInfo.apiVersion = VK_API_VERSION_1_0;
 
             // Create info structure
-            VkInstanceCreateInfo createInfo{};
-            createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-            createInfo.pApplicationInfo = &appInfo;
+            VkInstanceCreateInfo create_info{};
+            create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+            create_info.pApplicationInfo = &appInfo;
 
             // Add validation layer if enabled
             if (Config::ENABLE_VALIDATION_LAYERS) {
@@ -495,25 +523,25 @@ class VulkanTemplateApp {
                     throw std::runtime_error("error: required validation layer not available!");
                 }
 
-                createInfo.enabledLayerCount = static_cast<uint32_t>(Config::VALIDATION_LAYERS.size());
-                createInfo.ppEnabledLayerNames = Config::VALIDATION_LAYERS.data();
+                create_info.enabledLayerCount = static_cast<uint32_t>(Config::VALIDATION_LAYERS.size());
+                create_info.ppEnabledLayerNames = Config::VALIDATION_LAYERS.data();
 
                 // Add validation debug callback for instanciationg
-                VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-                populateVkDebugMessengerCreateInfo(debugCreateInfo);
-                createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
+                VkDebugUtilsMessengerCreateInfoEXT debugcreate_info{};
+                populateVkDebugMessengerCreateInfo(debugcreate_info);
+                create_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugcreate_info;
             } else {
-                createInfo.enabledLayerCount = 0;
-                createInfo.pNext = nullptr;
+                create_info.enabledLayerCount = 0;
+                create_info.pNext = nullptr;
             }
 
             // Get the extensions required to interface with the window system
             auto extensions = getRequiredExtensions();
-            createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-            createInfo.ppEnabledExtensionNames = extensions.data();
+            create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+            create_info.ppEnabledExtensionNames = extensions.data();
 
             // Abort if VK instance cannot be created
-            if (vkCreateInstance(&createInfo, nullptr, &vk_instance) != VK_SUCCESS) {
+            if (vkCreateInstance(&create_info, nullptr, &vk_instance) != VK_SUCCESS) {
                 throw std::runtime_error("error: failed to create instance!");
             }
         }
@@ -527,12 +555,12 @@ class VulkanTemplateApp {
             return VK_FALSE;
         }
 
-        void populateVkDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
-            createInfo = {};
-            createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-            createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-            createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-            createInfo.pfnUserCallback = vkDebugCallback;
+        void populateVkDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &create_info) {
+            create_info = {};
+            create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+            create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+            create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+            create_info.pfnUserCallback = vkDebugCallback;
         }
 
         /**
@@ -541,10 +569,10 @@ class VulkanTemplateApp {
         void createVkDebugMessenger() {
             if (!Config::ENABLE_VALIDATION_LAYERS) return;
 
-            VkDebugUtilsMessengerCreateInfoEXT createInfo{};
-            populateVkDebugMessengerCreateInfo(createInfo);
+            VkDebugUtilsMessengerCreateInfoEXT create_info{};
+            populateVkDebugMessengerCreateInfo(create_info);
 
-            if (CreateDebugUtilsMessengerEXT(vk_instance, &createInfo, nullptr, &vk_debug_messenger) != VK_SUCCESS) {
+            if (CreateDebugUtilsMessengerEXT(vk_instance, &create_info, nullptr, &vk_debug_messenger) != VK_SUCCESS) {
                 throw std::runtime_error("failed to set up debug messenger!");
             }
         }
@@ -564,6 +592,10 @@ class VulkanTemplateApp {
         void cleanup() {
             if (Config::ENABLE_VALIDATION_LAYERS) {
                 DestroyDebugUtilsMessengerEXT(vk_instance, vk_debug_messenger, nullptr);
+            }
+
+            for (auto img_view : swapchain_img_views) {
+                vkDestroyImageView(device, img_view, nullptr);
             }
 
             vkDestroySwapchainKHR(device, swapchain, nullptr);
