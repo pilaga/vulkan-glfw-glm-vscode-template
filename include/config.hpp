@@ -23,6 +23,8 @@ class Config {
         static VkPresentModeKHR PRESENT_MODE;  // The present mode
         static VkQueueFlags QUEUE_FLAGS;       // The queue flags
 
+        static std::string SHADERS_PATH;
+
         static VkBool32 SWAPCHAIN_CLIPPED;                             // True to enable clipping
         static VkImageUsageFlags SWAPCHAIN_IMAGE_USAGE;                // The swap chain image usage
         static VkCompositeAlphaFlagBitsKHR SWAPCHAIN_COMPOSITE_ALPHA;  // The swap chain composite alpha

@@ -3,6 +3,8 @@
 uint32_t Config::WIDTH = 800;
 uint32_t Config::HEIGHT = 600;
 
+std::string Config::SHADERS_PATH = "../shaders/";
+
 std::vector<const char *> Config::DEVICE_EXTENSIONS = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
 VkFormat Config::SURFACE_FORMAT = VK_FORMAT_B8G8R8A8_SRGB;

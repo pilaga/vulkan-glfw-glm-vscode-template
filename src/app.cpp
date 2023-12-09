@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <optional>
@@ -75,6 +76,28 @@ class VulkanTemplateApp {
          * Creates the graphics pipeline.
          */
         void createGraphicsPipeline() {}
+
+        /**
+         * Reads a file from provided filename/path.
+         */
+        static std::vector<char> readFile(const std::string &filename) {
+            // Start reading at the end of file so we can use the read position to determine the size of the file
+            std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+            if (!file.is_open()) {
+                throw std::runtime_error("failed to open file!");
+            }
+
+            size_t file_size = (size_t)file.tellg();
+
+            // Create an populate buffer with file content
+            std::vector<char> buffer(file_size);
+            file.seekg(0);
+            file.read(buffer.data(), file_size);
+
+            file.close();
+            return buffer;
+        }
 
         /*
          * Creates the GLFW window surface.
