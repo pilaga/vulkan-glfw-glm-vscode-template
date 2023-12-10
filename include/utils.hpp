@@ -4,7 +4,10 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <fstream>
+#include <iostream>
 #include <optional>
+#include <string>
 #include <vector>
 
 /**
@@ -42,5 +45,10 @@ struct SwapChainSupportDetails {
         std::vector<VkSurfaceFormatKHR> formats;
         std::vector<VkPresentModeKHR> presentModes;
 };
+
+/**
+ * Reads a file from provided filename/path.
+ */
+std::vector<char> readFile(const std::string &filename);
 
 #endif  // _UTILS_H_
