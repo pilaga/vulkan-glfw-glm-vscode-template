@@ -76,15 +76,22 @@ class VulkanTemplateApp {
          * Creates the graphics pipeline.
          */
         void createGraphicsPipeline() {
-            auto vertex_shader_code = readFile(Config::SHADERS_PATH + "vert.spv");
-            auto fragment_shader_code = readFile(Config::SHADERS_PATH + "frag.spv");
+            auto vert_shader_code = readFile(Config::SHADERS_PATH + "vert.spv");
+            auto frag_shader_code = readFile(Config::SHADERS_PATH + "frag.spv");
 
-            VkShaderModule vertex_shader_module = createShaderModule(vertex_shader_code);
-            VkShaderModule fragment_shader_module = createShaderModule(fragment_shader_code);
+            VkShaderModule vert_shader_module = createShaderModule(vert_shader_code);
+            VkShaderModule frag_shader_module = createShaderModule(frag_shader_code);
+
+            // Create and assign shaders to the appropriate shader pipeline stage
+            VkPipelineShaderStageCreateInfo vert_shader_stage_info{};
+            vert_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            vert_shader_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+            vert_shader_stage_info.module = vert_shader_module;
+            vert_shader_stage_info.pName = "main";  // vertex shader entrypoint
 
             // Destroy the shader modules after the graphics pipeline is created
-            vkDestroyShaderModule(device, fragment_shader_module, nullptr);
-            vkDestroyShaderModule(device, vertex_shader_module, nullptr);
+            vkDestroyShaderModule(device, frag_shader_module, nullptr);
+            vkDestroyShaderModule(device, vert_shader_module, nullptr);
         }
 
         /**
