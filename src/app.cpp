@@ -76,8 +76,15 @@ class VulkanTemplateApp {
          * Creates the graphics pipeline.
          */
         void createGraphicsPipeline() {
-            auto vertShaderCode = readFile(Config::SHADERS_PATH + "vert.spv");
-            auto fragShaderCode = readFile(Config::SHADERS_PATH + "frag.spv");
+            auto vertex_shader_code = readFile(Config::SHADERS_PATH + "vert.spv");
+            auto fragment_shader_code = readFile(Config::SHADERS_PATH + "frag.spv");
+
+            VkShaderModule vertex_shader_module = createShaderModule(vertex_shader_code);
+            VkShaderModule fragment_shader_module = createShaderModule(fragment_shader_code);
+
+            // Destroy the shader modules after the graphics pipeline is created
+            vkDestroyShaderModule(device, fragment_shader_module, nullptr);
+            vkDestroyShaderModule(device, vertex_shader_module, nullptr);
         }
 
         /**
