@@ -111,9 +111,16 @@ class VulkanTemplateApp {
             VkPipelineVertexInputStateCreateInfo vertex_input_info{};
             vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
             vertex_input_info.vertexBindingDescriptionCount = 0;
-            vertex_input_info.pVertexBindingDescriptions = nullptr;  // Optional
+            vertex_input_info.pVertexBindingDescriptions = nullptr;
             vertex_input_info.vertexAttributeDescriptionCount = 0;
-            vertex_input_info.pVertexAttributeDescriptions = nullptr;  // Optional
+            vertex_input_info.pVertexAttributeDescriptions = nullptr;
+
+            // Define input assembly
+            // Specify triangle list geometry to be drawn from the vertices
+            VkPipelineInputAssemblyStateCreateInfo input_assembly{};
+            input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+            input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            input_assembly.primitiveRestartEnable = VK_FALSE;
 
             // Destroy the shader modules after the graphics pipeline is created
             vkDestroyShaderModule(device, frag_shader_module, nullptr);
