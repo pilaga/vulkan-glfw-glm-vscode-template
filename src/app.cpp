@@ -135,6 +135,12 @@ class VulkanTemplateApp {
             scissor.offset = {0, 0};
             scissor.extent = swapchain_extent;
 
+            // Create the viewport state structure
+            VkPipelineViewportStateCreateInfo viewport_state{};
+            viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+            viewport_state.viewportCount = 1;
+            viewport_state.scissorCount = 1;
+
             // Destroy the shader modules after the graphics pipeline is created
             vkDestroyShaderModule(device, frag_shader_module, nullptr);
             vkDestroyShaderModule(device, vert_shader_module, nullptr);
