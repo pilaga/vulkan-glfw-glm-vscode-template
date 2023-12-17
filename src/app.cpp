@@ -99,6 +99,14 @@ class VulkanTemplateApp {
             // Create array containing both shader stages info
             VkPipelineShaderStageCreateInfo shader_stages[] = {vert_shader_stage_info, frag_shader_stage_info};
 
+            // Specify the states which we want to change dynamically after pipeline creation (ie. exclude scissor and viewport state)
+            std::vector<VkDynamicState> dynamic_states = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+
+            VkPipelineDynamicStateCreateInfo dynamic_state{};
+            dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+            dynamic_state.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
+            dynamic_state.pDynamicStates = dynamic_states.data();
+
             // Destroy the shader modules after the graphics pipeline is created
             vkDestroyShaderModule(device, frag_shader_module, nullptr);
             vkDestroyShaderModule(device, vert_shader_module, nullptr);
