@@ -131,6 +131,10 @@ class VulkanTemplateApp {
             viewport.minDepth = 0.0f;
             viewport.maxDepth = 1.0f;
 
+            VkRect2D scissor{};
+            scissor.offset = {0, 0};
+            scissor.extent = swapchain_extent;
+
             // Destroy the shader modules after the graphics pipeline is created
             vkDestroyShaderModule(device, frag_shader_module, nullptr);
             vkDestroyShaderModule(device, vert_shader_module, nullptr);
