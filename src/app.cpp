@@ -122,6 +122,15 @@ class VulkanTemplateApp {
             input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
             input_assembly.primitiveRestartEnable = VK_FALSE;
 
+            // Define a viewport that is the same resolution as our window
+            VkViewport viewport{};
+            viewport.x = 0.0f;
+            viewport.y = 0.0f;
+            viewport.width = (float)swapchain_extent.width;
+            viewport.height = (float)swapchain_extent.height;
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+
             // Destroy the shader modules after the graphics pipeline is created
             vkDestroyShaderModule(device, frag_shader_module, nullptr);
             vkDestroyShaderModule(device, vert_shader_module, nullptr);
