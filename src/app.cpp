@@ -45,6 +45,7 @@ class VulkanTemplateApp {
         VkFormat swapchain_format;
         VkExtent2D swapchain_extent;
         std::vector<VkImageView> swapchain_img_views;
+        VkPipelineLayout pipeline_layout;
 
         /**
          * Initializes the GLFW window.
@@ -179,13 +180,25 @@ class VulkanTemplateApp {
             VkPipelineColorBlendStateCreateInfo color_blending{};
             color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
             color_blending.logicOpEnable = VK_FALSE;
-            color_blending.logicOp = VK_LOGIC_OP_COPY;  // Optional
+            color_blending.logicOp = VK_LOGIC_OP_COPY;
             color_blending.attachmentCount = 1;
             color_blending.pAttachments = &color_blend_attachment;
-            color_blending.blendConstants[0] = 0.0f;  // Optional
-            color_blending.blendConstants[1] = 0.0f;  // Optional
-            color_blending.blendConstants[2] = 0.0f;  // Optional
-            color_blending.blendConstants[3] = 0.0f;  // Optional
+            color_blending.blendConstants[0] = 0.0f;
+            color_blending.blendConstants[1] = 0.0f;
+            color_blending.blendConstants[2] = 0.0f;
+            color_blending.blendConstants[3] = 0.0f;
+
+            // Create pipeline layout info, used to store shader uniforms
+            VkPipelineLayoutCreateInfo pipeline_layout_info{};
+            pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            pipeline_layout_info.setLayoutCount = 0;
+            pipeline_layout_info.pSetLayouts = nullptr;
+            pipeline_layout_info.pushConstantRangeCount = 0;
+            pipeline_layout_info.pPushConstantRanges = nullptr;
+
+            if (vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
+                throw std::runtime_error("failed to create pipeline layout!");
+            }
 
             // Destroy the shader modules after the graphics pipeline is created
             vkDestroyShaderModule(device, frag_shader_module, nullptr);
@@ -741,6 +754,7 @@ class VulkanTemplateApp {
                 vkDestroyImageView(device, img_view, nullptr);
             }
 
+            vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
             vkDestroySwapchainKHR(device, swapchain, nullptr);
             vkDestroyDevice(device, nullptr);
             vkDestroySurfaceKHR(vk_instance, surface, nullptr);
