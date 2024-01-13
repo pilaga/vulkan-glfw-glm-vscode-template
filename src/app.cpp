@@ -50,6 +50,7 @@ class VulkanTemplateApp {
         VkPipeline graphics_pipeline;
         std::vector<VkFramebuffer> swapchain_framebuffers;
         VkCommandPool command_pool;
+        VkCommandBuffer command_buffer;
 
         /**
          * Initializes the GLFW window.
@@ -78,6 +79,7 @@ class VulkanTemplateApp {
             createGraphicsPipeline();
             createFramebuffers();
             createCommandPool();
+            createCommandBuffer();
         }
 
         /**
@@ -93,6 +95,21 @@ class VulkanTemplateApp {
 
             if (vkCreateCommandPool(device, &pool_info, nullptr, &command_pool) != VK_SUCCESS) {
                 throw std::runtime_error("error: failed to create command pool!");
+            }
+        }
+
+        /**
+         * Allocate a single command buffer from the command pool.
+         */
+        void createCommandBuffer() {
+            VkCommandBufferAllocateInfo alloc_info{};
+            alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+            alloc_info.commandPool = command_pool;
+            alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;  // Can be submitted to a queue for execution
+            alloc_info.commandBufferCount = 1;                   // We are allocating a single command buffer
+
+            if (vkAllocateCommandBuffers(device, &alloc_info, &command_buffer) != VK_SUCCESS) {
+                throw std::runtime_error("error: failed to allocate command buffers!");
             }
         }
 
