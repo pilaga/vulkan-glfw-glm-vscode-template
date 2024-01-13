@@ -70,6 +70,7 @@ class VulkanTemplateApp {
             createLogicalDevice();
             createSwapChain();
             createImageViews();
+            createRenderPass();
             createGraphicsPipeline();
         }
 
@@ -731,6 +732,22 @@ class VulkanTemplateApp {
             if (CreateDebugUtilsMessengerEXT(vk_instance, &create_info, nullptr, &vk_debug_messenger) != VK_SUCCESS) {
                 throw std::runtime_error("failed to set up debug messenger!");
             }
+        }
+
+        /**
+         * Creates the render pass.
+         */
+        void createRenderPass() {
+            // Single color buffer attachment represented by one of the images in the swap chain
+            VkAttachmentDescription color_attachment{};
+            color_attachment.format = swapchain_format;
+            color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+            color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;    // Clear the buffer before rendering
+            color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;  //  Rendered contents will be stored in memory and can be read later
+            color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;  // We want the image to be ready for presentation after rendering
         }
 
         /**
