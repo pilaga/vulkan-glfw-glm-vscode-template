@@ -47,6 +47,7 @@ class VulkanTemplateApp {
         std::vector<VkImageView> swapchain_img_views;
         VkRenderPass render_pass;
         VkPipelineLayout pipeline_layout;
+        VkPipeline graphics_pipeline;
 
         /**
          * Initializes the GLFW window.
@@ -168,7 +169,7 @@ class VulkanTemplateApp {
             multisampling.alphaToCoverageEnable = VK_FALSE;
             multisampling.alphaToOneEnable = VK_FALSE;
 
-            // Define color blending (no alpha belnding)
+            // Define color blending (no alpha blending)
             VkPipelineColorBlendAttachmentState color_blend_attachment{};
             color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
             color_blend_attachment.blendEnable = VK_FALSE;
@@ -199,7 +200,35 @@ class VulkanTemplateApp {
             pipeline_layout_info.pPushConstantRanges = nullptr;
 
             if (vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create pipeline layout!");
+                throw std::runtime_error("error: failed to create pipeline layout!");
+            }
+
+            // Create pipeline info
+            VkGraphicsPipelineCreateInfo pipeline_info{};
+            pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+            // 1. Reference the array of shader info struct
+            pipeline_info.stageCount = 2;
+            pipeline_info.pStages = shader_stages;
+            // 2. Reference the structs describing the fixed function stage
+            pipeline_info.pVertexInputState = &vertex_input_info;
+            pipeline_info.pInputAssemblyState = &input_assembly;
+            pipeline_info.pViewportState = &viewport_state;
+            pipeline_info.pRasterizationState = &rasterizer;
+            pipeline_info.pMultisampleState = &multisampling;
+            pipeline_info.pDepthStencilState = nullptr;
+            pipeline_info.pColorBlendState = &color_blending;
+            pipeline_info.pDynamicState = &dynamic_state;
+            // 3. Reference the pipeline layout
+            pipeline_info.layout = pipeline_layout;
+            // 4. Reference the render pass
+            pipeline_info.renderPass = render_pass;
+            pipeline_info.subpass = 0;
+            // 5. Create a new graphics pipeline by deriving from an existing pipeline (not used here)
+            pipeline_info.basePipelineHandle = VK_NULL_HANDLE;  // Optional
+            pipeline_info.basePipelineIndex = -1;               // Optional
+
+            if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS) {
+                throw std::runtime_error("error: failed to create graphics pipeline!");
             }
 
             // Destroy the shader modules after the graphics pipeline is created
@@ -793,6 +822,7 @@ class VulkanTemplateApp {
                 vkDestroyImageView(device, img_view, nullptr);
             }
 
+            vkDestroyPipeline(device, graphics_pipeline, nullptr);
             vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
             vkDestroyRenderPass(device, render_pass, nullptr);
             vkDestroySwapchainKHR(device, swapchain, nullptr);
