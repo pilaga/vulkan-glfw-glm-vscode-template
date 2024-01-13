@@ -11,7 +11,7 @@
 #include <vector>
 
 /**
- * Creates the debug messenger extesion for Vulkan.
+ * Creates the debug messenger extension for Vulkan.
  * @param instance The VK instance.
  * @param pCreateInfo Pointer to the create info for the debug messenger.
  * @param pAllocator Leave nullptr for now.

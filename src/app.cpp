@@ -49,6 +49,7 @@ class VulkanTemplateApp {
         VkPipelineLayout pipeline_layout;
         VkPipeline graphics_pipeline;
         std::vector<VkFramebuffer> swapchain_framebuffers;
+        VkCommandPool command_pool;
 
         /**
          * Initializes the GLFW window.
@@ -76,6 +77,23 @@ class VulkanTemplateApp {
             createRenderPass();
             createGraphicsPipeline();
             createFramebuffers();
+            createCommandPool();
+        }
+
+        /**
+         * Creates the command pool to manage the momory used to store the buffers and associated command buffers.
+         */
+        void createCommandPool() {
+            QueueFamilyIndices queue_family_indices = findQueueFamilies(physical_device);
+
+            VkCommandPoolCreateInfo pool_info{};
+            pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+            pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;         // Allows command buffers to be rerecorded individually
+            pool_info.queueFamilyIndex = queue_family_indices.graphicsFamily.value();  // We're going to record drawing commands so we pick the graphics queue family
+
+            if (vkCreateCommandPool(device, &pool_info, nullptr, &command_pool) != VK_SUCCESS) {
+                throw std::runtime_error("error: failed to create command pool!");
+            }
         }
 
         /**
@@ -845,6 +863,8 @@ class VulkanTemplateApp {
             if (Config::ENABLE_VALIDATION_LAYERS) {
                 DestroyDebugUtilsMessengerEXT(vk_instance, vk_debug_messenger, nullptr);
             }
+
+            vkDestroyCommandPool(device, command_pool, nullptr);
 
             for (auto framebuffer : swapchain_framebuffers) {
                 vkDestroyFramebuffer(device, framebuffer, nullptr);

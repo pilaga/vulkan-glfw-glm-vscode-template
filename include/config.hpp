@@ -8,7 +8,7 @@
 #include <vector>
 
 /**
- * Used for storing application configuration.
+ * Used for storing the application configuration.
  */
 class Config {
     public:
