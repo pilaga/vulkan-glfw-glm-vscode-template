@@ -48,6 +48,7 @@ class VulkanTemplateApp {
         VkRenderPass render_pass;
         VkPipelineLayout pipeline_layout;
         VkPipeline graphics_pipeline;
+        std::vector<VkFramebuffer> swapchain_framebuffers;
 
         /**
          * Initializes the GLFW window.
@@ -74,6 +75,7 @@ class VulkanTemplateApp {
             createImageViews();
             createRenderPass();
             createGraphicsPipeline();
+            createFramebuffers();
         }
 
         /**
@@ -234,6 +236,32 @@ class VulkanTemplateApp {
             // Destroy the shader modules after the graphics pipeline is created
             vkDestroyShaderModule(device, frag_shader_module, nullptr);
             vkDestroyShaderModule(device, vert_shader_module, nullptr);
+        }
+
+        /**
+         * Creates the swap chain frame buffers.
+         */
+        void createFramebuffers() {
+            // Resize container to hold all the framebuffers
+            swapchain_framebuffers.resize(swapchain_img_views.size());
+
+            // Iterate through the image views and create framebuffers from them
+            for (size_t i = 0; i < swapchain_img_views.size(); i++) {
+                VkImageView attachments[] = {swapchain_img_views[i]};
+
+                VkFramebufferCreateInfo framebuffer_info{};
+                framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+                framebuffer_info.renderPass = render_pass;
+                framebuffer_info.attachmentCount = 1;
+                framebuffer_info.pAttachments = attachments;
+                framebuffer_info.width = swapchain_extent.width;
+                framebuffer_info.height = swapchain_extent.height;
+                framebuffer_info.layers = 1;  // Our swap chain images are single images
+
+                if (vkCreateFramebuffer(device, &framebuffer_info, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS) {
+                    throw std::runtime_error("error: failed to create framebuffers!");
+                }
+            }
         }
 
         /**
@@ -816,6 +844,10 @@ class VulkanTemplateApp {
         void cleanup() {
             if (Config::ENABLE_VALIDATION_LAYERS) {
                 DestroyDebugUtilsMessengerEXT(vk_instance, vk_debug_messenger, nullptr);
+            }
+
+            for (auto framebuffer : swapchain_framebuffers) {
+                vkDestroyFramebuffer(device, framebuffer, nullptr);
             }
 
             for (auto img_view : swapchain_img_views) {
