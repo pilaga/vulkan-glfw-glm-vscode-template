@@ -114,6 +114,22 @@ class VulkanTemplateApp {
         }
 
         /**
+         * Writes the command we want to execute into the command buffer.
+         * @param command_buffer The command buffer.
+         * @param image_index The index of the swapchain image to write into.
+         */
+        void recordCommandBuffer(VkCommandBuffer command_buffer, uint32_t image_index) {
+            VkCommandBufferBeginInfo begin_info{};
+            begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            begin_info.flags = 0;
+            begin_info.pInheritanceInfo = nullptr;
+
+            if (vkBeginCommandBuffer(command_buffer, &begin_info) != VK_SUCCESS) {
+                throw std::runtime_error("error: failed to begin recording command buffer!");
+            }
+        }
+
+        /**
          * Creates the graphics pipeline.
          */
         void createGraphicsPipeline() {
