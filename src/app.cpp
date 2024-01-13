@@ -748,6 +748,16 @@ class VulkanTemplateApp {
             color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
             color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;  // We want the image to be ready for presentation after rendering
+
+            VkAttachmentReference color_attachment_ref{};
+            color_attachment_ref.attachment = 0;  // We only have a single attachment description so the index is 0
+            color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+            // Create render subpass using attachment reference
+            VkSubpassDescription subpass{};
+            subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+            subpass.colorAttachmentCount = 1;
+            subpass.pColorAttachments = &color_attachment_ref;
         }
 
         /**
