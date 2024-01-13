@@ -45,6 +45,7 @@ class VulkanTemplateApp {
         VkFormat swapchain_format;
         VkExtent2D swapchain_extent;
         std::vector<VkImageView> swapchain_img_views;
+        VkRenderPass render_pass;
         VkPipelineLayout pipeline_layout;
 
         /**
@@ -730,7 +731,7 @@ class VulkanTemplateApp {
             populateVkDebugMessengerCreateInfo(create_info);
 
             if (CreateDebugUtilsMessengerEXT(vk_instance, &create_info, nullptr, &vk_debug_messenger) != VK_SUCCESS) {
-                throw std::runtime_error("failed to set up debug messenger!");
+                throw std::runtime_error("error: failed to set up debug messenger!");
             }
         }
 
@@ -758,6 +759,17 @@ class VulkanTemplateApp {
             subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
             subpass.colorAttachmentCount = 1;
             subpass.pColorAttachments = &color_attachment_ref;
+
+            VkRenderPassCreateInfo render_pass_info{};
+            render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+            render_pass_info.attachmentCount = 1;
+            render_pass_info.pAttachments = &color_attachment;
+            render_pass_info.subpassCount = 1;
+            render_pass_info.pSubpasses = &subpass;
+
+            if (vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
+                throw std::runtime_error("error: failed to create render pass!");
+            }
         }
 
         /**
@@ -782,6 +794,7 @@ class VulkanTemplateApp {
             }
 
             vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
+            vkDestroyRenderPass(device, render_pass, nullptr);
             vkDestroySwapchainKHR(device, swapchain, nullptr);
             vkDestroyDevice(device, nullptr);
             vkDestroySurfaceKHR(vk_instance, surface, nullptr);
