@@ -119,6 +119,7 @@ class VulkanTemplateApp {
          * @param image_index The index of the swapchain image to write into.
          */
         void recordCommandBuffer(VkCommandBuffer command_buffer, uint32_t image_index) {
+            // Recording a command buffer always starts by calling vkBeginCommandBuffer with an info struct specifying the usage of the command buffer
             VkCommandBufferBeginInfo begin_info{};
             begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             begin_info.flags = 0;
@@ -127,6 +128,24 @@ class VulkanTemplateApp {
             if (vkBeginCommandBuffer(command_buffer, &begin_info) != VK_SUCCESS) {
                 throw std::runtime_error("error: failed to begin recording command buffer!");
             }
+
+            // Drawing starts by beginning the render pass. Info struct is used to configure the render pass
+            VkRenderPassBeginInfo render_pass_info{};
+            render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            render_pass_info.renderPass = render_pass;
+            render_pass_info.framebuffer = swapchain_framebuffers[image_index];
+
+            // Define the size of the render area
+            render_pass_info.renderArea.offset = {0, 0};
+            render_pass_info.renderArea.extent = swapchain_extent;
+
+            // Define the clear values used by VK_ATTACHMENT_LOAD_OP_CLEAR which we use as load operation for the color attachment
+            VkClearValue clear_color = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+            render_pass_info.clearValueCount = 1;
+            render_pass_info.pClearValues = &clear_color;
+
+            // Begin the render pass
+            vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
         }
 
         /**
