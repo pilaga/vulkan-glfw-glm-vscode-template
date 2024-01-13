@@ -146,6 +146,36 @@ class VulkanTemplateApp {
 
             // Begin the render pass
             vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+
+            // Bind the graphics pipeline
+            vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
+
+            // Viewport state was specified as dynamic and needs to be set
+            VkViewport viewport{};
+            viewport.x = 0.0f;
+            viewport.y = 0.0f;
+            viewport.width = static_cast<float>(swapchain_extent.width);
+            viewport.height = static_cast<float>(swapchain_extent.height);
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+            vkCmdSetViewport(command_buffer, 0, 1, &viewport);
+
+            // Scissor state was specified as dynamic and needs to be set
+            VkRect2D scissor{};
+            scissor.offset = {0, 0};
+            scissor.extent = swapchain_extent;
+            vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+
+            // Issue the draw command
+            vkCmdDraw(command_buffer, 3, 1, 0, 0);
+
+            // End the render pass
+            vkCmdEndRenderPass(command_buffer);
+
+            // Finish recording the command buffer
+            if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
+                throw std::runtime_error("error: failed to record command buffer!");
+            }
         }
 
         /**
