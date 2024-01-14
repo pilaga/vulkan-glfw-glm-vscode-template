@@ -178,6 +178,8 @@ class VulkanTemplateApp {
             }
         }
 
+        // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation
+
         /**
          * Creates the graphics pipeline.
          */
@@ -935,8 +937,20 @@ class VulkanTemplateApp {
         void renderLoop() {
             while (!glfwWindowShouldClose(window)) {
                 glfwPollEvents();
+
+                drawFrame();
             }
         }
+
+        /**
+         * Draws a frame. Steps to follow with vulkan:
+         * 1) wait for the previous frame to finish
+         * 2) acquire an image from the swap chain
+         * 3) record a command buffer which draws the scene onto that image
+         * 4) submit the recorded command buffer
+         * 5) present the swap chain image
+         */
+        void drawFrame() {}
 
         /**
          * Clean-up: destroy VK instance and GLFW window.
