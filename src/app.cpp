@@ -956,6 +956,9 @@ class VulkanTemplateApp {
 
                 drawFrame();
             }
+
+            // Wait for logical device to finish operations before exiting
+            vkDeviceWaitIdle(device);
         }
 
         /**
@@ -1032,6 +1035,24 @@ class VulkanTemplateApp {
             if (vkQueueSubmit(graphics_queue, 1, &submit_info, inflight_fence) != VK_SUCCESS) {
                 throw std::runtime_error("failed to submit draw command buffer!");
             }
+
+            // Configure presentation so we can show the image on the screen
+            VkPresentInfoKHR present_info{};
+            present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+            // Specify which semaphores to wait on before presentation happens
+            present_info.waitSemaphoreCount = 1;
+            present_info.pWaitSemaphores = signal_semaphores;
+
+            // Specify the swapchains to present images to and the index of the image for each swap chain
+            VkSwapchainKHR swap_chains[] = {swapchain};
+            present_info.swapchainCount = 1;
+            present_info.pSwapchains = swap_chains;
+            present_info.pImageIndices = &img_index;
+            present_info.pResults = nullptr;
+
+            // Submit request to present an image to the swap chain
+            vkQueuePresentKHR(present_queue, &present_info);
         }
 
         /**
