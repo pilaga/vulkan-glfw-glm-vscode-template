@@ -957,6 +957,7 @@ class VulkanTemplateApp {
 
             VkFenceCreateInfo fence_info{};
             fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+            fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;  // Create fence already signaled so the first draw call does not block indefinitely
 
             if (vkCreateSemaphore(device, &semaphore_info, nullptr, &img_available_semaphore) != VK_SUCCESS ||
                 vkCreateSemaphore(device, &semaphore_info, nullptr, &render_finished_Semaphore) != VK_SUCCESS || vkCreateFence(device, &fence_info, nullptr, &inflight_fence) != VK_SUCCESS) {
@@ -977,7 +978,19 @@ class VulkanTemplateApp {
          * - presenting that image to the screen, returning it to the swapchain
          * This means we need to control the order of the functions using semaphore, because each call relies on the previous finishing.
          */
-        void drawFrame() {}
+        void drawFrame() {
+            // At the start of the frame, wait until the previous frame has finished using the fence
+            // VK_TRUE to indicate we want to wait for all fences (only one fence here so doesn't matter)
+            // UINT64_MAX to disable the timeout
+            vkWaitForFences(device, 1, &inflight_fence, VK_TRUE, UINT64_MAX);
+
+            // After waiting, we reset the fence to unsignaled state
+            vkResetFences(device, 1, &inflight_fence);
+
+            // Acquire an image from the swapchain
+            uint32_t img_index;
+            vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, img_available_semaphore, VK_NULL_HANDLE, &img_index);
+        }
 
         /**
          * Clean-up: destroy VK instance and GLFW window.
