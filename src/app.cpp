@@ -990,6 +990,36 @@ class VulkanTemplateApp {
             // Acquire an image from the swapchain
             uint32_t img_index;
             vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, img_available_semaphore, VK_NULL_HANDLE, &img_index);
+
+            // Reset the command buffer to make sure it can be recorded
+            vkResetCommandBuffer(command_buffer, 0);
+
+            // Record our predefined command into the command buffer
+            recordCommandBuffer(command_buffer, img_index);
+
+            // Prepare for submitting the command buffer
+            VkSubmitInfo submit_info{};
+            submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+            VkSemaphore wait_semaphores[] = {img_available_semaphore};
+            VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+            // Specify which semaphores to wait on before execution begins
+            submit_info.waitSemaphoreCount = 1;
+            submit_info.pWaitSemaphores = wait_semaphores;
+            submit_info.pWaitDstStageMask = wait_stages;
+            // Specify which command buffer to submit
+            submit_info.commandBufferCount = 1;
+            submit_info.pCommandBuffers = &command_buffer;
+
+            // Specify which semaphores to signal once command buffer execution has finished
+            VkSemaphore signal_semaphores[] = {render_finished_Semaphore};
+            submit_info.signalSemaphoreCount = 1;
+            submit_info.pSignalSemaphores = signal_semaphores;
+
+            // Submit command buffer to the graphics queu
+            if (vkQueueSubmit(graphics_queue, 1, &submit_info, inflight_fence) != VK_SUCCESS) {
+                throw std::runtime_error("failed to submit draw command buffer!");
+            }
         }
 
         /**
