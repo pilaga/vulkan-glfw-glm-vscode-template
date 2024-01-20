@@ -923,12 +923,24 @@ class VulkanTemplateApp {
             subpass.colorAttachmentCount = 1;
             subpass.pColorAttachments = &color_attachment_ref;
 
+            // Create subpass dependency
+            VkSubpassDependency dependency{};
+            dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+            dependency.dstSubpass = 0;
+            // Specify the operations to wait on. Waiting on the color attachment output stage means we wait for the swap chain to finish reading from the image before we access it
+            dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            dependency.srcAccessMask = 0;
+            dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
             VkRenderPassCreateInfo render_pass_info{};
             render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
             render_pass_info.attachmentCount = 1;
             render_pass_info.pAttachments = &color_attachment;
             render_pass_info.subpassCount = 1;
             render_pass_info.pSubpasses = &subpass;
+            render_pass_info.dependencyCount = 1;
+            render_pass_info.pDependencies = &dependency;
 
             if (vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
                 throw std::runtime_error("error: failed to create render pass!");
