@@ -51,6 +51,9 @@ class VulkanTemplateApp {
         std::vector<VkFramebuffer> swapchain_framebuffers;
         VkCommandPool command_pool;
         VkCommandBuffer command_buffer;
+        VkSemaphore img_available_semaphore;
+        VkSemaphore render_finished_Semaphore;
+        VkFence inflight_fence;
 
         /**
          * Initializes the GLFW window.
@@ -80,6 +83,7 @@ class VulkanTemplateApp {
             createFramebuffers();
             createCommandPool();
             createCommandBuffer();
+            createSynchronisationObjects();
         }
 
         /**
@@ -943,12 +947,35 @@ class VulkanTemplateApp {
         }
 
         /**
+         * Creates the synchronisation objects used to synchronise vulkan API calls order.
+         * Sephamores are used to wait on swapchain operations because they happen on the GPU.
+         * Fences are used to wait for the frame to finish, because we need the CPU to wait.
+         */
+        void createSynchronisationObjects() {
+            VkSemaphoreCreateInfo semaphore_info{};
+            semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+            VkFenceCreateInfo fence_info{};
+            fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+
+            if (vkCreateSemaphore(device, &semaphore_info, nullptr, &img_available_semaphore) != VK_SUCCESS ||
+                vkCreateSemaphore(device, &semaphore_info, nullptr, &render_finished_Semaphore) != VK_SUCCESS || vkCreateFence(device, &fence_info, nullptr, &inflight_fence) != VK_SUCCESS) {
+                throw std::runtime_error("error: failed to create sync objects!");
+            }
+        }
+
+        /**
          * Draws a frame. Steps to follow with vulkan:
          * 1) wait for the previous frame to finish
          * 2) acquire an image from the swap chain
          * 3) record a command buffer which draws the scene onto that image
          * 4) submit the recorded command buffer
          * 5) present the swap chain image
+         * Note: Vulkan API calls to the GPU are usually asynchronous:
+         * - Acquiring an image from the swap chain
+         * - executing commands to draw onto the acquired image
+         * - presenting that image to the screen, returning it to the swapchain
+         * This means we need to control the order of the functions using semaphore, because each call relies on the previous finishing.
          */
         void drawFrame() {}
 
@@ -960,6 +987,9 @@ class VulkanTemplateApp {
                 DestroyDebugUtilsMessengerEXT(vk_instance, vk_debug_messenger, nullptr);
             }
 
+            vkDestroySemaphore(device, img_available_semaphore, nullptr);
+            vkDestroySemaphore(device, render_finished_Semaphore, nullptr);
+            vkDestroyFence(device, inflight_fence, nullptr);
             vkDestroyCommandPool(device, command_pool, nullptr);
 
             for (auto framebuffer : swapchain_framebuffers) {
