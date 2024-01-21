@@ -556,6 +556,15 @@ class VulkanTemplateApp {
          * Recreate the swap chain to handle things such as window resizing.
          */
         void recreateSwapChain() {
+            int width = 0, height = 0;
+            glfwGetFramebufferSize(window, &width, &height);
+
+            // Pause swap chain recreation until window is in the background (height and width != 0)
+            while (width == 0 || height == 0) {
+                glfwGetFramebufferSize(window, &width, &height);
+                glfwWaitEvents();
+            }
+
             // First wait for device to be available
             vkDeviceWaitIdle(device);
 
