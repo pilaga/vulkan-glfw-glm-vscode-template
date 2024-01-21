@@ -55,6 +55,7 @@ class VulkanTemplateApp {
         std::vector<VkSemaphore> render_finished_semaphores;
         std::vector<VkFence> inflight_fences;
         uint32_t frame_index = 0;
+        bool framebuffer_resized = false;
 
         /**
          * Initializes the GLFW window.
@@ -63,9 +64,11 @@ class VulkanTemplateApp {
             glfwInit();
 
             glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);  // Tell GLFW not to create a GL context
-            glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);    // Disable window resizing
+            glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);     // Enable window resizing
 
             window = glfwCreateWindow(Config::WIDTH, Config::HEIGHT, "Vulkan Template", nullptr, nullptr);
+            glfwSetWindowUserPointer(window, this);                             // Set pointer to be retrieved in the call back
+            glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);  // Set call back for window resize
         }
 
         /**
@@ -85,6 +88,18 @@ class VulkanTemplateApp {
             createCommandPool();
             createCommandBuffers();
             createSynchronisationObjects();
+        }
+
+        /**
+         * Set-up framebuffer resize callback.
+         * Use a static function because GLFW doesn't know how to call a member function with the right <this> pointer to our app instance.
+         * @param window Pointer to the GLFW window.
+         * @param width The window width.
+         * @param height The window height.
+         */
+        static void framebufferResizeCallback(GLFWwindow *window, int width, int height) {
+            auto app = reinterpret_cast<VulkanTemplateApp *>(glfwGetWindowUserPointer(window));
+            app->framebuffer_resized = true;
         }
 
         /**
@@ -1104,7 +1119,9 @@ class VulkanTemplateApp {
             // Submit request to present an image to the swap chain
             result = vkQueuePresentKHR(present_queue, &present_info);
 
-            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebuffer_resized) {
+                // Reset resized flag
+                framebuffer_resized = false;
                 recreateSwapChain();
             } else if (result != VK_SUCCESS) {
                 throw std::runtime_error("error: failed to present swapchain image!");
