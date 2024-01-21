@@ -538,6 +538,36 @@ class VulkanTemplateApp {
         }
 
         /**
+         * Recreate the swap chain to handle things such as window resizing.
+         */
+        void recreateSwapChain() {
+            // First wait for device to be available
+            vkDeviceWaitIdle(device);
+
+            cleanupSwapChain();
+
+            // Recreate the swapchain objects
+            createSwapChain();
+            createImageViews();
+            createFramebuffers();
+        }
+
+        /**
+         * Cleans-up the swap chain.
+         */
+        void cleanupSwapChain() {
+            for (auto framebuffer : swapchain_framebuffers) {
+                vkDestroyFramebuffer(device, framebuffer, nullptr);
+            }
+
+            for (auto img_view : swapchain_img_views) {
+                vkDestroyImageView(device, img_view, nullptr);
+            }
+
+            vkDestroySwapchainKHR(device, swapchain, nullptr);
+        }
+
+        /**
          * Picks the first GPU that provides VK support and assigns its handle to <physicalDevice> class member.
          */
         void pickGPU() {
@@ -1074,9 +1104,11 @@ class VulkanTemplateApp {
          * Clean-up: destroy VK instance and GLFW window.
          */
         void cleanup() {
-            if (Config::ENABLE_VALIDATION_LAYERS) {
-                DestroyDebugUtilsMessengerEXT(vk_instance, vk_debug_messenger, nullptr);
-            }
+            cleanupSwapChain();
+
+            vkDestroyPipeline(device, graphics_pipeline, nullptr);
+            vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
+            vkDestroyRenderPass(device, render_pass, nullptr);
 
             for (size_t i = 0; i < Config::MAX_FRAMES_IN_FLIGHT; i++) {
                 vkDestroySemaphore(device, render_finished_semaphores[i], nullptr);
@@ -1085,20 +1117,12 @@ class VulkanTemplateApp {
             }
 
             vkDestroyCommandPool(device, command_pool, nullptr);
-
-            for (auto framebuffer : swapchain_framebuffers) {
-                vkDestroyFramebuffer(device, framebuffer, nullptr);
-            }
-
-            for (auto img_view : swapchain_img_views) {
-                vkDestroyImageView(device, img_view, nullptr);
-            }
-
-            vkDestroyPipeline(device, graphics_pipeline, nullptr);
-            vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
-            vkDestroyRenderPass(device, render_pass, nullptr);
-            vkDestroySwapchainKHR(device, swapchain, nullptr);
             vkDestroyDevice(device, nullptr);
+
+            if (Config::ENABLE_VALIDATION_LAYERS) {
+                DestroyDebugUtilsMessengerEXT(vk_instance, vk_debug_messenger, nullptr);
+            }
+
             vkDestroySurfaceKHR(vk_instance, surface, nullptr);
             vkDestroyInstance(vk_instance, nullptr);
 
