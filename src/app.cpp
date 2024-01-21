@@ -54,7 +54,7 @@ class VulkanTemplateApp {
         std::vector<VkSemaphore> img_available_semaphores;
         std::vector<VkSemaphore> render_finished_semaphores;
         std::vector<VkFence> inflight_fences;
-        uint32_t current_frame_index = 0;
+        uint32_t frame_index = 0;
 
         /**
          * Initializes the GLFW window.
@@ -1039,26 +1039,34 @@ class VulkanTemplateApp {
             // At the start of the frame, wait until the previous frame has finished using the fence
             // VK_TRUE to indicate we want to wait for all fences (only one fence here so doesn't matter)
             // UINT64_MAX to disable the timeout
-            vkWaitForFences(device, 1, &inflight_fences[current_frame_index], VK_TRUE, UINT64_MAX);
-
-            // After waiting, we reset the fence to unsignaled state
-            vkResetFences(device, 1, &inflight_fences[current_frame_index]);
+            vkWaitForFences(device, 1, &inflight_fences[frame_index], VK_TRUE, UINT64_MAX);
 
             // Acquire an image from the swapchain
             uint32_t img_index;
-            vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, img_available_semaphores[current_frame_index], VK_NULL_HANDLE, &img_index);
+            VkResult result = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, img_available_semaphores[frame_index], VK_NULL_HANDLE, &img_index);
+
+            // Recreate swapchain if out of date
+            if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+                recreateSwapChain();
+                return;
+            } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {  // VK_SUBOPTIMAL_KHR: the swapchain can still be used to present but the surface properties are no longer exactly matched
+                throw std::runtime_error("error: failed to acquire swapchain image!");
+            }
+
+            // After waiting, we reset the fence to unsignaled state (only if we are submitting a command buffer)
+            vkResetFences(device, 1, &inflight_fences[frame_index]);
 
             // Reset the command buffer to make sure it can be recorded
-            vkResetCommandBuffer(command_buffers[current_frame_index], 0);
+            vkResetCommandBuffer(command_buffers[frame_index], 0);
 
             // Record our predefined command into the command buffer
-            recordCommandBuffer(command_buffers[current_frame_index], img_index);
+            recordCommandBuffer(command_buffers[frame_index], img_index);
 
             // Prepare for submitting the command buffer
             VkSubmitInfo submit_info{};
             submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-            VkSemaphore wait_semaphores[] = {img_available_semaphores[current_frame_index]};
+            VkSemaphore wait_semaphores[] = {img_available_semaphores[frame_index]};
             VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
             // Specify which semaphores to wait on before execution begins
             submit_info.waitSemaphoreCount = 1;
@@ -1066,15 +1074,15 @@ class VulkanTemplateApp {
             submit_info.pWaitDstStageMask = wait_stages;
             // Specify which command buffer to submit
             submit_info.commandBufferCount = 1;
-            submit_info.pCommandBuffers = &command_buffers[current_frame_index];
+            submit_info.pCommandBuffers = &command_buffers[frame_index];
 
             // Specify which semaphores to signal once command buffer execution has finished
-            VkSemaphore signal_semaphores[] = {render_finished_semaphores[current_frame_index]};
+            VkSemaphore signal_semaphores[] = {render_finished_semaphores[frame_index]};
             submit_info.signalSemaphoreCount = 1;
             submit_info.pSignalSemaphores = signal_semaphores;
 
             // Submit command buffer to the graphics queu
-            if (vkQueueSubmit(graphics_queue, 1, &submit_info, inflight_fences[current_frame_index]) != VK_SUCCESS) {
+            if (vkQueueSubmit(graphics_queue, 1, &submit_info, inflight_fences[frame_index]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to submit draw command buffer!");
             }
 
@@ -1094,10 +1102,16 @@ class VulkanTemplateApp {
             present_info.pResults = nullptr;
 
             // Submit request to present an image to the swap chain
-            vkQueuePresentKHR(present_queue, &present_info);
+            result = vkQueuePresentKHR(present_queue, &present_info);
+
+            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+                recreateSwapChain();
+            } else if (result != VK_SUCCESS) {
+                throw std::runtime_error("error: failed to present swapchain image!");
+            }
 
             // Update current frame index
-            current_frame_index = (current_frame_index + 1) % Config::MAX_FRAMES_IN_FLIGHT;
+            frame_index = (frame_index + 1) % Config::MAX_FRAMES_IN_FLIGHT;
         }
 
         /**
