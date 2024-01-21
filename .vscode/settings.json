@@ -69,6 +69,7 @@
     "format": "cpp",
     "optional": "cpp",
     "*.clang-format": "cpp",
-    "functional": "cpp"
+    "functional": "cpp",
+    "fstream": "cpp"
   }
 }

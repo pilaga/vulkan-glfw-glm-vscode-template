@@ -50,10 +50,11 @@ class VulkanTemplateApp {
         VkPipeline graphics_pipeline;
         std::vector<VkFramebuffer> swapchain_framebuffers;
         VkCommandPool command_pool;
-        VkCommandBuffer command_buffer;
-        VkSemaphore img_available_semaphore;
-        VkSemaphore render_finished_Semaphore;
-        VkFence inflight_fence;
+        std::vector<VkCommandBuffer> command_buffers;
+        std::vector<VkSemaphore> img_available_semaphores;
+        std::vector<VkSemaphore> render_finished_semaphores;
+        std::vector<VkFence> inflight_fences;
+        uint32_t current_frame_index = 0;
 
         /**
          * Initializes the GLFW window.
@@ -82,7 +83,7 @@ class VulkanTemplateApp {
             createGraphicsPipeline();
             createFramebuffers();
             createCommandPool();
-            createCommandBuffer();
+            createCommandBuffers();
             createSynchronisationObjects();
         }
 
@@ -103,16 +104,18 @@ class VulkanTemplateApp {
         }
 
         /**
-         * Allocate a single command buffer from the command pool.
+         * Allocate a command buffer for each frame.
          */
-        void createCommandBuffer() {
+        void createCommandBuffers() {
+            command_buffers.resize(Config::MAX_FRAMES_IN_FLIGHT);
+
             VkCommandBufferAllocateInfo alloc_info{};
             alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
             alloc_info.commandPool = command_pool;
             alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;  // Can be submitted to a queue for execution
-            alloc_info.commandBufferCount = 1;                   // We are allocating a single command buffer
+            alloc_info.commandBufferCount = (uint32_t)command_buffers.size();
 
-            if (vkAllocateCommandBuffers(device, &alloc_info, &command_buffer) != VK_SUCCESS) {
+            if (vkAllocateCommandBuffers(device, &alloc_info, command_buffers.data()) != VK_SUCCESS) {
                 throw std::runtime_error("error: failed to allocate command buffers!");
             }
         }
@@ -961,12 +964,18 @@ class VulkanTemplateApp {
             vkDeviceWaitIdle(device);
         }
 
+        // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Frames_in_flight
+
         /**
          * Creates the synchronisation objects used to synchronise vulkan API calls order.
          * Sephamores are used to wait on swapchain operations because they happen on the GPU.
          * Fences are used to wait for the frame to finish, because we need the CPU to wait.
          */
         void createSynchronisationObjects() {
+            img_available_semaphores.resize(Config::MAX_FRAMES_IN_FLIGHT);
+            render_finished_semaphores.resize(Config::MAX_FRAMES_IN_FLIGHT);
+            inflight_fences.resize(Config::MAX_FRAMES_IN_FLIGHT);
+
             VkSemaphoreCreateInfo semaphore_info{};
             semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -974,9 +983,12 @@ class VulkanTemplateApp {
             fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
             fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;  // Create fence already signaled so the first draw call does not block indefinitely
 
-            if (vkCreateSemaphore(device, &semaphore_info, nullptr, &img_available_semaphore) != VK_SUCCESS ||
-                vkCreateSemaphore(device, &semaphore_info, nullptr, &render_finished_Semaphore) != VK_SUCCESS || vkCreateFence(device, &fence_info, nullptr, &inflight_fence) != VK_SUCCESS) {
-                throw std::runtime_error("error: failed to create sync objects!");
+            for (size_t i = 0; i < Config::MAX_FRAMES_IN_FLIGHT; i++) {
+                if (vkCreateSemaphore(device, &semaphore_info, nullptr, &img_available_semaphores[i]) != VK_SUCCESS ||
+                    vkCreateSemaphore(device, &semaphore_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS ||
+                    vkCreateFence(device, &fence_info, nullptr, &inflight_fences[i]) != VK_SUCCESS) {
+                    throw std::runtime_error("error: failed to create sync objects!");
+                }
             }
         }
 
@@ -997,26 +1009,26 @@ class VulkanTemplateApp {
             // At the start of the frame, wait until the previous frame has finished using the fence
             // VK_TRUE to indicate we want to wait for all fences (only one fence here so doesn't matter)
             // UINT64_MAX to disable the timeout
-            vkWaitForFences(device, 1, &inflight_fence, VK_TRUE, UINT64_MAX);
+            vkWaitForFences(device, 1, &inflight_fences[current_frame_index], VK_TRUE, UINT64_MAX);
 
             // After waiting, we reset the fence to unsignaled state
-            vkResetFences(device, 1, &inflight_fence);
+            vkResetFences(device, 1, &inflight_fences[current_frame_index]);
 
             // Acquire an image from the swapchain
             uint32_t img_index;
-            vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, img_available_semaphore, VK_NULL_HANDLE, &img_index);
+            vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, img_available_semaphores[current_frame_index], VK_NULL_HANDLE, &img_index);
 
             // Reset the command buffer to make sure it can be recorded
-            vkResetCommandBuffer(command_buffer, 0);
+            vkResetCommandBuffer(command_buffers[current_frame_index], 0);
 
             // Record our predefined command into the command buffer
-            recordCommandBuffer(command_buffer, img_index);
+            recordCommandBuffer(command_buffers[current_frame_index], img_index);
 
             // Prepare for submitting the command buffer
             VkSubmitInfo submit_info{};
             submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-            VkSemaphore wait_semaphores[] = {img_available_semaphore};
+            VkSemaphore wait_semaphores[] = {img_available_semaphores[current_frame_index]};
             VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
             // Specify which semaphores to wait on before execution begins
             submit_info.waitSemaphoreCount = 1;
@@ -1024,15 +1036,15 @@ class VulkanTemplateApp {
             submit_info.pWaitDstStageMask = wait_stages;
             // Specify which command buffer to submit
             submit_info.commandBufferCount = 1;
-            submit_info.pCommandBuffers = &command_buffer;
+            submit_info.pCommandBuffers = &command_buffers[current_frame_index];
 
             // Specify which semaphores to signal once command buffer execution has finished
-            VkSemaphore signal_semaphores[] = {render_finished_Semaphore};
+            VkSemaphore signal_semaphores[] = {render_finished_semaphores[current_frame_index]};
             submit_info.signalSemaphoreCount = 1;
             submit_info.pSignalSemaphores = signal_semaphores;
 
             // Submit command buffer to the graphics queu
-            if (vkQueueSubmit(graphics_queue, 1, &submit_info, inflight_fence) != VK_SUCCESS) {
+            if (vkQueueSubmit(graphics_queue, 1, &submit_info, inflight_fences[current_frame_index]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to submit draw command buffer!");
             }
 
@@ -1053,6 +1065,9 @@ class VulkanTemplateApp {
 
             // Submit request to present an image to the swap chain
             vkQueuePresentKHR(present_queue, &present_info);
+
+            // Update current frame index
+            current_frame_index = (current_frame_index + 1) % Config::MAX_FRAMES_IN_FLIGHT;
         }
 
         /**
@@ -1063,9 +1078,12 @@ class VulkanTemplateApp {
                 DestroyDebugUtilsMessengerEXT(vk_instance, vk_debug_messenger, nullptr);
             }
 
-            vkDestroySemaphore(device, img_available_semaphore, nullptr);
-            vkDestroySemaphore(device, render_finished_Semaphore, nullptr);
-            vkDestroyFence(device, inflight_fence, nullptr);
+            for (size_t i = 0; i < Config::MAX_FRAMES_IN_FLIGHT; i++) {
+                vkDestroySemaphore(device, render_finished_semaphores[i], nullptr);
+                vkDestroySemaphore(device, img_available_semaphores[i], nullptr);
+                vkDestroyFence(device, inflight_fences[i], nullptr);
+            }
+
             vkDestroyCommandPool(device, command_pool, nullptr);
 
             for (auto framebuffer : swapchain_framebuffers) {

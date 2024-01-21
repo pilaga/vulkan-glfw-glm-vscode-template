@@ -31,6 +31,8 @@ class Config {
 
         static bool ENABLE_VALIDATION_LAYERS;                // True to enable validation layers
         static std::vector<const char *> VALIDATION_LAYERS;  // The required validation layers
+
+        static int MAX_FRAMES_IN_FLIGHT;  // The number of frames to be processed concurrently
 };
 
 #endif  // _CONFIG_H_
