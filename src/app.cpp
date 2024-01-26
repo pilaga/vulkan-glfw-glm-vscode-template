@@ -18,7 +18,7 @@
 
 #include "../include/config.hpp"
 #include "../include/utils.hpp"
-#include "../include/vertexInput.hpp"
+#include "../include/vertexInputDescription.hpp"
 
 /**
  * Template class implementing Vulkan, GLFW for window creation & GLM for algebraic functions.
@@ -58,7 +58,7 @@ class VulkanTemplateApp {
         uint32_t frame_index = 0;
         bool framebuffer_resized = false;
 
-        const std::vector<VertexInput> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+        const std::vector<VertexInputDescription> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
         /**
          * Initializes the GLFW window.
@@ -241,8 +241,8 @@ class VulkanTemplateApp {
             dynamic_state.pDynamicStates = dynamic_states.data();
 
             // Grab the vertex attribute descriptions
-            auto binding_description = VertexInput::getBindingDescription();
-            auto attribute_descriptions = VertexInput::getAttributeDescriptions();
+            auto binding_description = VertexInputDescription::getBindingDescription();
+            auto attribute_descriptions = VertexInputDescription::getAttributeDescriptions();
 
             // Specify vertex input - fill with nothing with now
             VkPipelineVertexInputStateCreateInfo vertex_input_info{};

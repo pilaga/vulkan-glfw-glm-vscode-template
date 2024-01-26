@@ -15,7 +15,7 @@
 /**
  * Vertex input attribute and binding description.
  */
-struct VertexInput {
+struct VertexInputDescription {
         glm::vec2 pos;
         glm::vec3 color;
 
@@ -23,7 +23,7 @@ struct VertexInput {
         static VkVertexInputBindingDescription getBindingDescription() {
             VkVertexInputBindingDescription binding_desc{};
             binding_desc.binding = 0;
-            binding_desc.stride = sizeof(VertexInput);
+            binding_desc.stride = sizeof(VertexInputDescription);
             binding_desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;  // Move to the next data point after each vertex
 
             return binding_desc;
@@ -38,13 +38,13 @@ struct VertexInput {
             attribute_desc_list[0].binding = 0;
             attribute_desc_list[0].location = 0;                      // Location directive of the input in the vertex shader
             attribute_desc_list[0].format = VK_FORMAT_R32G32_SFLOAT;  // Format matching vec2
-            attribute_desc_list[0].offset = offsetof(VertexInput, pos);
+            attribute_desc_list[0].offset = offsetof(VertexInputDescription, pos);
 
             // Attribute description for color
             attribute_desc_list[1].binding = 0;
             attribute_desc_list[1].location = 1;                         // Location in the vertex shader
             attribute_desc_list[1].format = VK_FORMAT_R32G32B32_SFLOAT;  // Format matching vec3
-            attribute_desc_list[1].offset = offsetof(VertexInput, color);
+            attribute_desc_list[1].offset = offsetof(VertexInputDescription, color);
 
             return attribute_desc_list;
         }
