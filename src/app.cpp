@@ -137,6 +137,12 @@ class VulkanTemplateApp {
 
             // Bind buffer to the memory
             vkBindBufferMemory(device, vertex_buffer, vertex_buffer_memory, 0);
+
+            // Fill the vertex buffer
+            void *data;
+            vkMapMemory(device, vertex_buffer_memory, 0, buffer_info.size, 0, &data);
+            memcpy(data, vertices.data(), (size_t)buffer_info.size);
+            vkUnmapMemory(device, vertex_buffer_memory);
         }
 
         /**
