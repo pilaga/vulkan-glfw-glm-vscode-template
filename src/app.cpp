@@ -231,6 +231,11 @@ class VulkanTemplateApp {
             // Bind the graphics pipeline
             vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
 
+            // Bind the vertex buffer to the command buffer
+            VkBuffer vertex_buffers[] = {vertex_buffer};
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+
             // Viewport state was specified as dynamic and needs to be set
             VkViewport viewport{};
             viewport.x = 0.0f;
