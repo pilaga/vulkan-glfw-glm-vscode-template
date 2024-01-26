@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <glm/glm.hpp>
 #include <iostream>
 #include <limits>
 #include <optional>
@@ -18,6 +19,11 @@
 
 #include "../include/config.hpp"
 #include "../include/utils.hpp"
+
+struct Vertex {
+        glm::vec2 pos;
+        glm::vec3 color;
+};
 
 /**
  * Template class implementing Vulkan, GLFW for window creation & GLM for algebraic functions.
@@ -56,6 +62,8 @@ class VulkanTemplateApp {
         std::vector<VkFence> inflight_fences;
         uint32_t frame_index = 0;
         bool framebuffer_resized = false;
+
+        const std::vector<Vertex> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
         /**
          * Initializes the GLFW window.
