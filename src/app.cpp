@@ -58,6 +58,7 @@ class VulkanTemplateApp {
         uint32_t frame_index = 0;
         bool framebuffer_resized = false;
         VkBuffer vertex_buffer;
+        VkDeviceMemory vertex_buffer_memory;
 
         const std::vector<VertexInputDescription> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
@@ -108,7 +109,7 @@ class VulkanTemplateApp {
         }
 
         /**
-         * Creates the vertex buffer.
+         * Creates the vertex buffer. Allocates memory for the vertex buffer.
          * */
         void createVertexBuffer() {
             VkBufferCreateInfo buffer_info{};
@@ -129,6 +130,13 @@ class VulkanTemplateApp {
             alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             alloc_info.allocationSize = mem_requirements.size;
             alloc_info.memoryTypeIndex = findMemoryType(mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+            if (vkAllocateMemory(device, &alloc_info, nullptr, &vertex_buffer_memory) != VK_SUCCESS) {
+                throw std::runtime_error("error: failed to allocate vertex buffer memory!");
+            }
+
+            // Bind buffer to the memory
+            vkBindBufferMemory(device, vertex_buffer, vertex_buffer_memory, 0);
         }
 
         /**
@@ -1196,6 +1204,7 @@ class VulkanTemplateApp {
             cleanupSwapChain();
 
             vkDestroyBuffer(device, vertex_buffer, nullptr);
+            vkFreeMemory(device, vertex_buffer_memory, nullptr);
             vkDestroyPipeline(device, graphics_pipeline, nullptr);
             vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
             vkDestroyRenderPass(device, render_pass, nullptr);
