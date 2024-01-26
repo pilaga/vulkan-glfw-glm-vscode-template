@@ -108,7 +108,7 @@ class VulkanTemplateApp {
         }
 
         /**
-         * Creates the vertex buffer to be drawn.
+         * Creates the vertex buffer.
          * */
         void createVertexBuffer() {
             VkBufferCreateInfo buffer_info{};
@@ -120,6 +120,31 @@ class VulkanTemplateApp {
             if (vkCreateBuffer(device, &buffer_info, nullptr, &vertex_buffer) != VK_SUCCESS) {
                 throw std::runtime_error("error: failed to create vertex buffer!");
             }
+
+            // Allocate memory for the vertex buffer
+            VkMemoryRequirements mem_requirements;
+            vkGetBufferMemoryRequirements(device, vertex_buffer, &mem_requirements);
+
+            VkMemoryAllocateInfo alloc_info{};
+            alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            alloc_info.allocationSize = mem_requirements.size;
+            alloc_info.memoryTypeIndex = findMemoryType(mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        }
+
+        /**
+         * Find a required memory type.
+         */
+        uint32_t findMemoryType(uint32_t type_filter, VkMemoryPropertyFlags properties) {
+            VkPhysicalDeviceMemoryProperties mem_properties;
+            vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
+
+            for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++) {
+                if ((type_filter & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
+                    return i;
+                }
+            }
+
+            throw std::runtime_error("error: failed to find suitable memory type!");
         }
 
         /**
