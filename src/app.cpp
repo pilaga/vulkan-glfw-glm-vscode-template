@@ -18,7 +18,7 @@
 
 #include "../include/config.hpp"
 #include "../include/utils.hpp"
-#include "../include/vertex.hpp"
+#include "../include/vertexInput.hpp"
 
 /**
  * Template class implementing Vulkan, GLFW for window creation & GLM for algebraic functions.
@@ -58,7 +58,7 @@ class VulkanTemplateApp {
         uint32_t frame_index = 0;
         bool framebuffer_resized = false;
 
-        const std::vector<Vertex> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+        const std::vector<VertexInput> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
         /**
          * Initializes the GLFW window.
@@ -240,13 +240,17 @@ class VulkanTemplateApp {
             dynamic_state.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
             dynamic_state.pDynamicStates = dynamic_states.data();
 
+            // Grab the vertex attribute descriptions
+            auto binding_description = VertexInput::getBindingDescription();
+            auto attribute_descriptions = VertexInput::getAttributeDescriptions();
+
             // Specify vertex input - fill with nothing with now
             VkPipelineVertexInputStateCreateInfo vertex_input_info{};
             vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-            vertex_input_info.vertexBindingDescriptionCount = 0;
-            vertex_input_info.pVertexBindingDescriptions = nullptr;
-            vertex_input_info.vertexAttributeDescriptionCount = 0;
-            vertex_input_info.pVertexAttributeDescriptions = nullptr;
+            vertex_input_info.vertexBindingDescriptionCount = 1;
+            vertex_input_info.pVertexBindingDescriptions = &binding_description;
+            vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size());
+            vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions.data();
 
             // Define input assembly
             // Specify triangle list geometry to be drawn from the vertices
