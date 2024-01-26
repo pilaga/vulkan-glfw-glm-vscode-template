@@ -5,6 +5,7 @@
 #include <GLFW/glfw3native.h>
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -20,9 +21,22 @@
 #include "../include/config.hpp"
 #include "../include/utils.hpp"
 
+/**
+ * Vertex input description.
+ */
 struct Vertex {
         glm::vec2 pos;
         glm::vec3 color;
+
+        // Vertex binding describes at which rate to load data from memory through the vertices
+        static VkVertexInputBindingDescription getBindingDescription() {
+            VkVertexInputBindingDescription binding_description{};
+            binding_description.binding = 0;
+            binding_description.stride = sizeof(Vertex);
+            binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;  // Move to the next data point after each vertex
+
+            return binding_description;
+        }
 };
 
 /**
