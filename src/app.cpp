@@ -57,6 +57,7 @@ class VulkanTemplateApp {
         std::vector<VkFence> inflight_fences;
         uint32_t frame_index = 0;
         bool framebuffer_resized = false;
+        VkBuffer vertex_buffer;
 
         const std::vector<VertexInputDescription> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
@@ -89,6 +90,7 @@ class VulkanTemplateApp {
             createGraphicsPipeline();
             createFramebuffers();
             createCommandPool();
+            createVertexBuffer();
             createCommandBuffers();
             createSynchronisationObjects();
         }
@@ -103,6 +105,21 @@ class VulkanTemplateApp {
         static void framebufferResizeCallback(GLFWwindow *window, int width, int height) {
             auto app = reinterpret_cast<VulkanTemplateApp *>(glfwGetWindowUserPointer(window));
             app->framebuffer_resized = true;
+        }
+
+        /**
+         * Creates the vertex buffer to be drawn.
+         * */
+        void createVertexBuffer() {
+            VkBufferCreateInfo buffer_info{};
+            buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            buffer_info.size = sizeof(vertices[0]) * vertices.size();  // Calculate size of the buffer
+            buffer_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;     // Set buffer type as vertex buffer
+            buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+            if (vkCreateBuffer(device, &buffer_info, nullptr, &vertex_buffer) != VK_SUCCESS) {
+                throw std::runtime_error("error: failed to create vertex buffer!");
+            }
         }
 
         /**
@@ -1153,6 +1170,7 @@ class VulkanTemplateApp {
         void cleanup() {
             cleanupSwapChain();
 
+            vkDestroyBuffer(device, vertex_buffer, nullptr);
             vkDestroyPipeline(device, graphics_pipeline, nullptr);
             vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
             vkDestroyRenderPass(device, render_pass, nullptr);
