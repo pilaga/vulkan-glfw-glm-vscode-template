@@ -20,6 +20,8 @@
 #include "../include/utils.hpp"
 #include "../include/vertexInputDescription.hpp"
 
+// https://vulkan-tutorial.com/en/Vertex_buffers/Staging_buffer
+
 /**
  * Template class implementing Vulkan, GLFW for window creation & GLM for algebraic functions.
  */
@@ -109,39 +111,53 @@ class VulkanTemplateApp {
         }
 
         /**
-         * Creates the vertex buffer. Allocates memory for the vertex buffer.
-         * */
-        void createVertexBuffer() {
+         * Function to create a buffer and allocate memory for it.
+         * @param size
+         * @param usage
+         * @param properties
+         * @param buffer
+         * @param buffer_memory
+         */
+        void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &buffer_memory) {
             VkBufferCreateInfo buffer_info{};
             buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-            buffer_info.size = sizeof(vertices[0]) * vertices.size();  // Calculate size of the buffer
-            buffer_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;     // Set buffer type as vertex buffer
+            buffer_info.size = size;
+            buffer_info.usage = usage;
             buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-            if (vkCreateBuffer(device, &buffer_info, nullptr, &vertex_buffer) != VK_SUCCESS) {
-                throw std::runtime_error("error: failed to create vertex buffer!");
+            if (vkCreateBuffer(device, &buffer_info, nullptr, &buffer) != VK_SUCCESS) {
+                throw std::runtime_error("error: failed to create buffer!");
             }
 
             // Allocate memory for the vertex buffer
             VkMemoryRequirements mem_requirements;
-            vkGetBufferMemoryRequirements(device, vertex_buffer, &mem_requirements);
+            vkGetBufferMemoryRequirements(device, buffer, &mem_requirements);
 
             VkMemoryAllocateInfo alloc_info{};
             alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             alloc_info.allocationSize = mem_requirements.size;
-            alloc_info.memoryTypeIndex = findMemoryType(mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            alloc_info.memoryTypeIndex = findMemoryType(mem_requirements.memoryTypeBits, properties);
 
-            if (vkAllocateMemory(device, &alloc_info, nullptr, &vertex_buffer_memory) != VK_SUCCESS) {
+            if (vkAllocateMemory(device, &alloc_info, nullptr, &buffer_memory) != VK_SUCCESS) {
                 throw std::runtime_error("error: failed to allocate vertex buffer memory!");
             }
 
             // Bind buffer to the memory
-            vkBindBufferMemory(device, vertex_buffer, vertex_buffer_memory, 0);
+            vkBindBufferMemory(device, buffer, buffer_memory, 0);
+        }
+
+        /**
+         * Creates the vertex buffer. Allocates memory for the vertex buffer.
+         * */
+        void createVertexBuffer() {
+            // Create the buffer
+            VkDeviceSize buffer_size = sizeof(vertices[0]) * vertices.size();
+            createBuffer(buffer_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, vertex_buffer, vertex_buffer_memory);
 
             // Fill the vertex buffer
             void *data;
-            vkMapMemory(device, vertex_buffer_memory, 0, buffer_info.size, 0, &data);
-            memcpy(data, vertices.data(), (size_t)buffer_info.size);
+            vkMapMemory(device, vertex_buffer_memory, 0, buffer_size, 0, &data);
+            memcpy(data, vertices.data(), (size_t)buffer_size);
             vkUnmapMemory(device, vertex_buffer_memory);
         }
 
@@ -263,8 +279,6 @@ class VulkanTemplateApp {
                 throw std::runtime_error("error: failed to record command buffer!");
             }
         }
-
-        // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation
 
         /**
          * Creates the graphics pipeline.
