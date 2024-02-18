@@ -112,13 +112,13 @@ class VulkanTemplateApp {
 
         /**
          * Function to create a buffer and allocate memory for it.
-         * @param size
-         * @param usage
-         * @param properties
-         * @param buffer
-         * @param buffer_memory
+         * @param size The size of the buffer to create.
+         * @param usage The buffer usage flag.
+         * @param properties The memory properties flags.
+         * @param buffer The buffer object.
+         * @param buffer_memory The buffer memory object.
          */
-        void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &buffer_memory) {
+        void createAndAllocateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &buffer_memory) {
             VkBufferCreateInfo buffer_info{};
             buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
             buffer_info.size = size;
@@ -147,18 +147,71 @@ class VulkanTemplateApp {
         }
 
         /**
+         * Copy the content from one buffer to another.
+         * @param src_buffer The source buffer.
+         * @param dst_buffer The destination buffer.
+         * @param size The device size.
+         */
+        void copyBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size) {
+            // Allocate a temporary command buffer
+            VkCommandBufferAllocateInfo alloc_info{};
+            alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+            alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+            alloc_info.commandPool = command_pool;
+            alloc_info.commandBufferCount = 1;
+
+            VkCommandBuffer command_buffer;
+            vkAllocateCommandBuffers(device, &alloc_info, &command_buffer);
+
+            // Start recording the temporary command buffer
+            VkCommandBufferBeginInfo begin_info{};
+            begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+            vkBeginCommandBuffer(command_buffer, &begin_info);
+
+            // Temporary command buffer only contains the copy command
+            VkBufferCopy copy_region{};
+            copy_region.srcOffset = 0;
+            copy_region.dstOffset = 0;
+            copy_region.size = size;
+            vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
+
+            vkEndCommandBuffer(command_buffer);
+
+            // Execute the command buffer
+            VkSubmitInfo submit_info{};
+            submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            submit_info.commandBufferCount = 1;
+            submit_info.pCommandBuffers = &command_buffer;
+
+            vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vkQueueWaitIdle(graphics_queue);
+
+            vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
+        }
+
+        // https://vulkan-tutorial.com/en/Vertex_buffers/Staging_buffer
+
+        /**
          * Creates the vertex buffer. Allocates memory for the vertex buffer.
          * */
         void createVertexBuffer() {
-            // Create the buffer
             VkDeviceSize buffer_size = sizeof(vertices[0]) * vertices.size();
-            createBuffer(buffer_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, vertex_buffer, vertex_buffer_memory);
+
+            //
+            VkBuffer staging_buffer;
+            VkDeviceMemory staging_buffer_memory;
+            createAndAllocateBuffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_buffer_memory);
+
+            void *data;
+            vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
+            memcpy(data, vertices.data(), (size_t)buffer_size);
+            vkUnmapMemory(device, staging_buffer_memory);
+
+            createAndAllocateBuffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertex_buffer, vertex_buffer_memory);
 
             // Fill the vertex buffer
-            void *data;
-            vkMapMemory(device, vertex_buffer_memory, 0, buffer_size, 0, &data);
-            memcpy(data, vertices.data(), (size_t)buffer_size);
-            vkUnmapMemory(device, vertex_buffer_memory);
         }
 
         /**
