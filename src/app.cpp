@@ -199,7 +199,7 @@ class VulkanTemplateApp {
         void createVertexBuffer() {
             VkDeviceSize buffer_size = sizeof(vertices[0]) * vertices.size();
 
-            //
+            // First create a staging buffer in CPU memory to upload the vertex array to
             VkBuffer staging_buffer;
             VkDeviceMemory staging_buffer_memory;
             createAndAllocateBuffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_buffer_memory);
@@ -211,7 +211,11 @@ class VulkanTemplateApp {
 
             createAndAllocateBuffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertex_buffer, vertex_buffer_memory);
 
-            // Fill the vertex buffer
+            // Copy data from the staging buffer to the device buffer in GPU memory
+            copyBuffer(staging_buffer, vertex_buffer, buffer_size);
+
+            vkDestroyBuffer(device, staging_buffer, nullptr);
+            vkFreeMemory(device, staging_buffer_memory, nullptr);
         }
 
         /**
