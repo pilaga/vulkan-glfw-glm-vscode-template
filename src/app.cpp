@@ -61,8 +61,13 @@ class VulkanTemplateApp {
         bool framebuffer_resized = false;
         VkBuffer vertex_buffer;
         VkDeviceMemory vertex_buffer_memory;
+        VkBuffer index_buffer;
+        VkDeviceMemory index_buffer_memory;
 
-        const std::vector<VertexInputDescription> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+        const std::vector<VertexInputDescription> vertices = {
+            {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+
+        const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
         /**
          * Initializes the GLFW window.
@@ -94,6 +99,7 @@ class VulkanTemplateApp {
             createFramebuffers();
             createCommandPool();
             createVertexBuffer();
+            createIndexBuffer();
             createCommandBuffers();
             createSynchronisationObjects();
         }
@@ -195,7 +201,7 @@ class VulkanTemplateApp {
 
         /**
          * Creates the vertex buffer. Allocates memory for the vertex buffer.
-         * */
+         */
         void createVertexBuffer() {
             VkDeviceSize buffer_size = sizeof(vertices[0]) * vertices.size();
 
@@ -213,6 +219,31 @@ class VulkanTemplateApp {
 
             // Copy data from the staging buffer to the device buffer in GPU memory
             copyBuffer(staging_buffer, vertex_buffer, buffer_size);
+
+            vkDestroyBuffer(device, staging_buffer, nullptr);
+            vkFreeMemory(device, staging_buffer_memory, nullptr);
+        }
+
+        /**
+         * Creates the index buffer. Allocates memory for the index buffer.
+         */
+        void createIndexBuffer() {
+            VkDeviceSize buffer_size = sizeof(indices[0]) * indices.size();
+
+            // Load index buffer to staging buffer
+            VkBuffer staging_buffer;
+            VkDeviceMemory staging_buffer_memory;
+            createAndAllocateBuffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_buffer_memory);
+
+            void *data;
+            vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
+            memcpy(data, indices.data(), (size_t)buffer_size);
+            vkUnmapMemory(device, staging_buffer_memory);
+
+            createAndAllocateBuffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, index_buffer, index_buffer_memory);
+
+            // Copy staging buffer to GPU index buffeer
+            copyBuffer(staging_buffer, index_buffer, buffer_size);
 
             vkDestroyBuffer(device, staging_buffer, nullptr);
             vkFreeMemory(device, staging_buffer_memory, nullptr);
@@ -309,6 +340,9 @@ class VulkanTemplateApp {
             VkDeviceSize offsets[] = {0};
             vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
 
+            // Bind the index buffer to the command buffer
+            vkCmdBindIndexBuffer(command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
+
             // Viewport state was specified as dynamic and needs to be set
             VkViewport viewport{};
             viewport.x = 0.0f;
@@ -326,7 +360,7 @@ class VulkanTemplateApp {
             vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
             // Issue the draw command
-            vkCmdDraw(command_buffer, 3, 1, 0, 0);
+            vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
             // End the render pass
             vkCmdEndRenderPass(command_buffer);
@@ -1287,6 +1321,8 @@ class VulkanTemplateApp {
 
             vkDestroyBuffer(device, vertex_buffer, nullptr);
             vkFreeMemory(device, vertex_buffer_memory, nullptr);
+            vkDestroyBuffer(device, index_buffer, nullptr);
+            vkFreeMemory(device, index_buffer_memory, nullptr);
             vkDestroyPipeline(device, graphics_pipeline, nullptr);
             vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
             vkDestroyRenderPass(device, render_pass, nullptr);
