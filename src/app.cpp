@@ -197,7 +197,7 @@ class VulkanTemplateApp {
             vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
         }
 
-        // https://vulkan-tutorial.com/en/Vertex_buffers/Staging_buffer
+        // https://vulkan-tutorial.com/en/Uniform_buffers/Descriptor_layout_and_buffer
 
         /**
          * Creates the vertex buffer. Allocates memory for the vertex buffer.
