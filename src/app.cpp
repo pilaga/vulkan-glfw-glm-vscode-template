@@ -29,8 +29,7 @@ struct UniformBufferObject {
         glm::mat4 proj;
 };
 
-// https://vulkan-tutorial.com/en/Vertex_buffers/Staging_buffer
-// https://vulkan-tutorial.com/en/Uniform_buffers/Descriptor_layout_and_buffer
+// https://vulkan-tutorial.com/Uniform_buffers/Descriptor_pool_and_sets
 
 /**
  * Template class implementing Vulkan, GLFW for window creation & GLM for algebraic functions.
@@ -116,6 +115,7 @@ class VulkanTemplateApp {
             createVertexBuffer();
             createIndexBuffer();
             createUniformBuffers();
+            createDescriptorPool();
             createCommandBuffers();
             createSynchronisationObjects();
         }
@@ -263,6 +263,9 @@ class VulkanTemplateApp {
             vkFreeMemory(device, staging_buffer_memory, nullptr);
         }
 
+        /**
+         * Create uniform buffers.
+         */
         void createUniformBuffers() {
             VkDeviceSize buffer_size = sizeof(UniformBufferObject);
 
@@ -277,6 +280,11 @@ class VulkanTemplateApp {
                 vkMapMemory(device, uniform_buffers_memory[i], 0, buffer_size, 0, &uniform_buffers_mapped[i]);
             }
         }
+
+        /**
+         * Create a descriptor pool.
+         */
+        void createDescriptorPool() {}
 
         /**
          * Create descriptor layout.
