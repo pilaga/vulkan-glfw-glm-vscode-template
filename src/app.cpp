@@ -76,6 +76,7 @@ class VulkanTemplateApp {
         std::vector<VkBuffer> uniform_buffers;
         std::vector<VkDeviceMemory> uniform_buffers_memory;
         std::vector<void *> uniform_buffers_mapped;
+        VkDescriptorPool descriptor_pool;
 
         const std::vector<VertexInputDescription> vertices = {
             {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
@@ -284,7 +285,22 @@ class VulkanTemplateApp {
         /**
          * Create a descriptor pool.
          */
-        void createDescriptorPool() {}
+        void createDescriptorPool() {
+            // Describe the type of descriptor and how many in our descriptor set, allocate one for every frame
+            VkDescriptorPoolSize pool_size{};
+            pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            pool_size.descriptorCount = static_cast<uint32_t>(Config::MAX_FRAMES_IN_FLIGHT);
+
+            VkDescriptorPoolCreateInfo pool_info{};
+            pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+            pool_info.poolSizeCount = 1;
+            pool_info.pPoolSizes = &pool_size;
+            pool_info.maxSets = static_cast<uint32_t>(Config::MAX_FRAMES_IN_FLIGHT);
+
+            if (vkCreateDescriptorPool(device, &pool_info, nullptr, &descriptor_pool) != VK_SUCCESS) {
+                throw std::runtime_error("error: failed to create descriptor pool!");
+            }
+        }
 
         /**
          * Create descriptor layout.
