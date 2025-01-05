@@ -77,6 +77,7 @@ class VulkanTemplateApp {
         std::vector<VkDeviceMemory> uniform_buffers_memory;
         std::vector<void *> uniform_buffers_mapped;
         VkDescriptorPool descriptor_pool;
+        std::vector<VkDescriptorSet> descriptor_sets;
 
         const std::vector<VertexInputDescription> vertices = {
             {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
@@ -117,6 +118,7 @@ class VulkanTemplateApp {
             createIndexBuffer();
             createUniformBuffers();
             createDescriptorPool();
+            createDescriptorSets();
             createCommandBuffers();
             createSynchronisationObjects();
         }
@@ -299,6 +301,24 @@ class VulkanTemplateApp {
 
             if (vkCreateDescriptorPool(device, &pool_info, nullptr, &descriptor_pool) != VK_SUCCESS) {
                 throw std::runtime_error("error: failed to create descriptor pool!");
+            }
+        }
+
+        /**
+         * Create descriptor sets.
+         */
+        void createDescriptorSets() {
+            std::vector<VkDescriptorSetLayout> layouts(Config::MAX_FRAMES_IN_FLIGHT, descriptor_set_layout);
+            VkDescriptorSetAllocateInfo alloc_info{};
+            alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            alloc_info.descriptorPool = descriptor_pool;  // The descriptor pool to allocate from
+            alloc_info.descriptorSetCount = static_cast<uint32_t>(Config::MAX_FRAMES_IN_FLIGHT);
+            alloc_info.pSetLayouts = layouts.data();
+
+            // Here we create one descriptor set for each frame in flight, all with same layout
+            descriptor_sets.resize(Config::MAX_FRAMES_IN_FLIGHT);
+            if (vkAllocateDescriptorSets(device, &alloc_info, descriptor_sets.data()) != VK_SUCCESS) {
+                throw std::runtime_error("failed to allocate descriptor sets!");
             }
         }
 
@@ -1434,6 +1454,7 @@ class VulkanTemplateApp {
                 vkFreeMemory(device, uniform_buffers_memory[i], nullptr);
             }
 
+            vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
             vkDestroyDescriptorSetLayout(device, descriptor_set_layout, nullptr);
             vkDestroyPipeline(device, graphics_pipeline, nullptr);
             vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
