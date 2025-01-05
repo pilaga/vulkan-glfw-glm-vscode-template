@@ -478,6 +478,9 @@ class VulkanTemplateApp {
             scissor.extent = swapchain_extent;
             vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
+            // Bind the correct descriptor set to the frame
+            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_sets[image_index], 0, nullptr);
+
             // Issue the draw command
             vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
@@ -571,7 +574,7 @@ class VulkanTemplateApp {
             rasterizer.polygonMode = VK_POLYGON_MODE_FILL;  // Fills the polygon
             rasterizer.lineWidth = 1.0f;
             rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-            rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+            rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
             rasterizer.depthBiasEnable = VK_FALSE;
             rasterizer.depthBiasConstantFactor = 0.0f;
             rasterizer.depthBiasClamp = 0.0f;
@@ -1357,9 +1360,6 @@ class VulkanTemplateApp {
             // UINT64_MAX to disable the timeout
             vkWaitForFences(device, 1, &inflight_fences[frame_index], VK_TRUE, UINT64_MAX);
 
-            // Update uniform buffers
-            updateUniformBuffer(frame_index);
-
             // Acquire an image from the swapchain
             uint32_t img_index;
             VkResult result = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, img_available_semaphores[frame_index], VK_NULL_HANDLE, &img_index);
@@ -1380,6 +1380,9 @@ class VulkanTemplateApp {
 
             // Record our predefined command into the command buffer
             recordCommandBuffer(command_buffers[frame_index], img_index);
+
+            // Update uniform buffers
+            updateUniformBuffer(frame_index);
 
             // Prepare for submitting the command buffer
             VkSubmitInfo submit_info{};
