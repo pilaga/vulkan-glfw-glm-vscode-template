@@ -70,6 +70,7 @@
     "optional": "cpp",
     "*.clang-format": "cpp",
     "functional": "cpp",
-    "fstream": "cpp"
+    "fstream": "cpp",
+    "span": "cpp"
   }
 }

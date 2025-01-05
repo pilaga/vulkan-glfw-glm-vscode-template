@@ -20,7 +20,14 @@
 #include "../include/utils.hpp"
 #include "../include/vertexInputDescription.hpp"
 
+struct UniformBufferObject {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 proj;
+};
+
 // https://vulkan-tutorial.com/en/Vertex_buffers/Staging_buffer
+// https://vulkan-tutorial.com/en/Uniform_buffers/Descriptor_layout_and_buffer
 
 /**
  * Template class implementing Vulkan, GLFW for window creation & GLM for algebraic functions.
@@ -64,6 +71,9 @@ class VulkanTemplateApp {
         VkDeviceMemory vertex_buffer_memory;
         VkBuffer index_buffer;
         VkDeviceMemory index_buffer_memory;
+        std::vector<VkBuffer> uniform_buffers;
+        std::vector<VkDeviceMemory> uniform_buffers_memory;
+        std::vector<void *> uniform_buffers_mapped;
 
         const std::vector<VertexInputDescription> vertices = {
             {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
@@ -102,6 +112,7 @@ class VulkanTemplateApp {
             createCommandPool();
             createVertexBuffer();
             createIndexBuffer();
+            createUniformBuffers();
             createCommandBuffers();
             createSynchronisationObjects();
         }
@@ -199,8 +210,6 @@ class VulkanTemplateApp {
             vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
         }
 
-        // https://vulkan-tutorial.com/en/Uniform_buffers/Descriptor_layout_and_buffer
-
         /**
          * Creates the vertex buffer. Allocates memory for the vertex buffer.
          */
@@ -249,6 +258,21 @@ class VulkanTemplateApp {
 
             vkDestroyBuffer(device, staging_buffer, nullptr);
             vkFreeMemory(device, staging_buffer_memory, nullptr);
+        }
+
+        void createUniformBuffers() {
+            VkDeviceSize buffer_size = sizeof(UniformBufferObject);
+
+            uniform_buffers.resize(Config::MAX_FRAMES_IN_FLIGHT);
+            uniform_buffers_memory.resize(Config::MAX_FRAMES_IN_FLIGHT);
+            uniform_buffers_mapped.resize(Config::MAX_FRAMES_IN_FLIGHT);
+
+            for (size_t i = 0; i < Config::MAX_FRAMES_IN_FLIGHT; i++) {
+                createAndAllocateBuffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniform_buffers[i],
+                                        uniform_buffers_memory[i]);
+
+                vkMapMemory(device, uniform_buffers_memory[i], 0, buffer_size, 0, &uniform_buffers_mapped[i]);
+            }
         }
 
         /**
@@ -1349,6 +1373,12 @@ class VulkanTemplateApp {
             vkFreeMemory(device, vertex_buffer_memory, nullptr);
             vkDestroyBuffer(device, index_buffer, nullptr);
             vkFreeMemory(device, index_buffer_memory, nullptr);
+
+            for (size_t i = 0; i < Config::MAX_FRAMES_IN_FLIGHT; i++) {
+                vkDestroyBuffer(device, uniform_buffers[i], nullptr);
+                vkFreeMemory(device, uniform_buffers_memory[i], nullptr);
+            }
+
             vkDestroyDescriptorSetLayout(device, descriptor_set_layout, nullptr);
             vkDestroyPipeline(device, graphics_pipeline, nullptr);
             vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
