@@ -320,6 +320,28 @@ class VulkanTemplateApp {
             if (vkAllocateDescriptorSets(device, &alloc_info, descriptor_sets.data()) != VK_SUCCESS) {
                 throw std::runtime_error("failed to allocate descriptor sets!");
             }
+
+            // Here we populate the allocated descriptor sets
+            for (size_t i = 0; i < Config::MAX_FRAMES_IN_FLIGHT; i++) {
+                VkDescriptorBufferInfo buffer_info{};
+                buffer_info.buffer = uniform_buffers[i];
+                buffer_info.offset = 0;
+                buffer_info.range = sizeof(UniformBufferObject);
+
+                VkWriteDescriptorSet descriptor_write{};
+                descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                descriptor_write.dstSet = descriptor_sets[i];
+                descriptor_write.dstBinding = 0;
+                descriptor_write.dstArrayElement = 0;
+
+                descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                descriptor_write.descriptorCount = 1;
+                descriptor_write.pBufferInfo = &buffer_info;
+                descriptor_write.pImageInfo = nullptr;        // Optional
+                descriptor_write.pTexelBufferView = nullptr;  // Optional
+
+                vkUpdateDescriptorSets(device, 1, &descriptor_write, 0, nullptr);
+            }
         }
 
         /**
