@@ -3,12 +3,15 @@
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
-
+#define GLM_FORCE_RADIANS
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <limits>
 #include <optional>
@@ -1288,6 +1291,9 @@ class VulkanTemplateApp {
             // UINT64_MAX to disable the timeout
             vkWaitForFences(device, 1, &inflight_fences[frame_index], VK_TRUE, UINT64_MAX);
 
+            // Update uniform buffers
+            updateUniformBuffer(frame_index);
+
             // Acquire an image from the swapchain
             uint32_t img_index;
             VkResult result = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, img_available_semaphores[frame_index], VK_NULL_HANDLE, &img_index);
@@ -1328,7 +1334,7 @@ class VulkanTemplateApp {
             submit_info.signalSemaphoreCount = 1;
             submit_info.pSignalSemaphores = signal_semaphores;
 
-            // Submit command buffer to the graphics queu
+            // Submit command buffer to the graphics queue
             if (vkQueueSubmit(graphics_queue, 1, &submit_info, inflight_fences[frame_index]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to submit draw command buffer!");
             }
@@ -1361,6 +1367,31 @@ class VulkanTemplateApp {
 
             // Update current frame index
             frame_index = (frame_index + 1) % Config::MAX_FRAMES_IN_FLIGHT;
+        }
+
+        /**
+         * This function will update the uniform buffer between each draw call.
+         */
+        void updateUniformBuffer(uint32_t current_image) {
+            static auto start_time = std::chrono::high_resolution_clock::now();
+
+            auto current_time = std::chrono::high_resolution_clock::now();
+            float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
+
+            UniformBufferObject ubo{};
+
+            // Rotate model aroudn the Z axis
+            ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+            // Look at geometry from above at 45.0 deg angle
+            ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+            // Use perspective projection of 45 deg vertical FoV
+            ubo.proj = glm::perspective(glm::radians(45.0f), swapchain_extent.width / (float)swapchain_extent.height, 0.1f, 10.0f);
+            ubo.proj[1][1] *= -1;
+
+            // Copy updated buffer object into current uniform buffer
+            memcpy(uniform_buffers_mapped[current_image], &ubo, sizeof(ubo));
         }
 
         /**
