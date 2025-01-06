@@ -82,6 +82,8 @@ class VulkanTemplateApp {
         std::vector<void *> uniform_buffers_mapped;
         VkDescriptorPool descriptor_pool;
         std::vector<VkDescriptorSet> descriptor_sets;
+        VkImage texture_image;
+        VkDeviceMemory texture_image_memory;
 
         const std::vector<VertexInputDescription> vertices = {
             {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
@@ -231,7 +233,8 @@ class VulkanTemplateApp {
                 throw std::runtime_error("error: failed to load texture image!");
             }
 
-            // Create buffer in host visible memory so we can use vkMapMemory to copy the pixels to it
+            // 1. Copy the texture pixels into a temporary staging buffer
+            //  Create buffer in host visible memory so we can use vkMapMemory to copy the pixels to it
             VkBuffer staging_buffer;
             VkDeviceMemory staging_buffer_memory;
             createAndAllocateBuffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_buffer_memory);
@@ -244,6 +247,42 @@ class VulkanTemplateApp {
 
             // Release the stb object
             stbi_image_free(pixels);
+
+            // 2. Create a Vk image object
+            VkImageCreateInfo image_info{};
+            image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+            image_info.imageType = VK_IMAGE_TYPE_2D;
+            image_info.extent.width = static_cast<uint32_t>(tex_width);
+            image_info.extent.height = static_cast<uint32_t>(tex_height);
+            image_info.extent.depth = 1;
+            image_info.mipLevels = 1;
+            image_info.arrayLayers = 1;
+            image_info.format = VK_FORMAT_R8G8B8A8_SRGB;
+            image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+            image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+            image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+            image_info.flags = 0;  // Optional
+
+            if (vkCreateImage(device, &image_info, nullptr, &texture_image) != VK_SUCCESS) {
+                throw std::runtime_error("error: failed to create image!");
+            }
+
+            // 3. Allocate memory for the image object
+            VkMemoryRequirements memRequirements;
+            vkGetImageMemoryRequirements(device, texture_image, &memRequirements);
+
+            VkMemoryAllocateInfo alloc_info{};
+            alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            alloc_info.allocationSize = memRequirements.size;
+            alloc_info.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+            if (vkAllocateMemory(device, &alloc_info, nullptr, &texture_image_memory) != VK_SUCCESS) {
+                throw std::runtime_error("error: failed to allocate image memory!");
+            }
+
+            vkBindImageMemory(device, texture_image, texture_image_memory, 0);
         }
 
         /**
