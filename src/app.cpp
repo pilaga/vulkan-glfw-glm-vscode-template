@@ -20,6 +20,9 @@
 #include <stdexcept>
 #include <vector>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #include "../include/config.hpp"
 #include "../include/utils.hpp"
 #include "../include/vertexInputDescription.hpp"
@@ -115,6 +118,7 @@ class VulkanTemplateApp {
             createGraphicsPipeline();
             createFramebuffers();
             createCommandPool();
+            createTextureImage();
             createVertexBuffer();
             createIndexBuffer();
             createUniformBuffers();
@@ -216,6 +220,8 @@ class VulkanTemplateApp {
 
             vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
         }
+
+        createTextureImage() {}
 
         /**
          * Creates the vertex buffer. Allocates memory for the vertex buffer.
