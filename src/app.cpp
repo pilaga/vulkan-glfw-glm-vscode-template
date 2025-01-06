@@ -230,6 +230,20 @@ class VulkanTemplateApp {
             if (!pixels) {
                 throw std::runtime_error("error: failed to load texture image!");
             }
+
+            // Create buffer in host visible memory so we can use vkMapMemory to copy the pixels to it
+            VkBuffer staging_buffer;
+            VkDeviceMemory staging_buffer_memory;
+            createAndAllocateBuffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_buffer_memory);
+
+            // Copy the pixels to the buffer
+            void *data;
+            vkMapMemory(device, staging_buffer_memory, 0, image_size, 0, &data);
+            memcpy(data, pixels, static_cast<size_t>(image_size));
+            vkUnmapMemory(device, staging_buffer_memory);
+
+            // Release the stb object
+            stbi_image_free(pixels);
         }
 
         /**
