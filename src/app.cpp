@@ -221,7 +221,16 @@ class VulkanTemplateApp {
             vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
         }
 
-        createTextureImage() {}
+        void createTextureImage() {
+            int tex_width, tex_height, tex_channels;
+            std::string path = Config::TEXTURES_PATH + "texture.jpg";
+            stbi_uc *pixels = stbi_load(path.c_str(), &tex_width, &tex_height, &tex_channels, STBI_rgb_alpha);
+            VkDeviceSize image_size = tex_width * tex_height * 4;
+
+            if (!pixels) {
+                throw std::runtime_error("error: failed to load texture image!");
+            }
+        }
 
         /**
          * Creates the vertex buffer. Allocates memory for the vertex buffer.

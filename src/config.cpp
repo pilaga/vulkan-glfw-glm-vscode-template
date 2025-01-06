@@ -6,6 +6,7 @@ uint32_t Config::HEIGHT = 600;
 int Config::MAX_FRAMES_IN_FLIGHT = 2;
 
 std::string Config::SHADERS_PATH = "../shaders/";
+std::string Config::TEXTURES_PATH = "../textures/";
 
 std::vector<const char *> Config::DEVICE_EXTENSIONS = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 

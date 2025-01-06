@@ -24,6 +24,7 @@ class Config {
         static VkQueueFlags QUEUE_FLAGS;       // The queue flags
 
         static std::string SHADERS_PATH;
+        static std::string TEXTURES_PATH;
 
         static VkBool32 SWAPCHAIN_CLIPPED;                             // True to enable clipping
         static VkImageUsageFlags SWAPCHAIN_IMAGE_USAGE;                // The swap chain image usage

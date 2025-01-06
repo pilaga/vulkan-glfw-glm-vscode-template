@@ -6,7 +6,8 @@
                 "${workspaceFolder}/**",
                 "C:\\SDK\\VulkanSDK\\1.3.268.0\\Include",
                 "C:\\SDK\\GLFW\\glfw-3.3.8.bin.WIN64\\include",
-                "C:\\SDK\\GLM\\glm-0.9.9.8"
+                "C:\\SDK\\GLM\\glm-0.9.9.8",
+                "C:\\SDK\\STB"
             ],
             "defines": [
                 "_DEBUG",
