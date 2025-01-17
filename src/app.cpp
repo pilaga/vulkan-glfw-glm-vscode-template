@@ -223,6 +223,9 @@ class VulkanTemplateApp {
             vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
         }
 
+        /**
+         * Creates a texture from an image file.
+         */
         void createTextureImage() {
             int tex_width, tex_height, tex_channels;
             std::string path = Config::TEXTURES_PATH + "texture.jpg";
@@ -248,12 +251,21 @@ class VulkanTemplateApp {
             // Release the stb object
             stbi_image_free(pixels);
 
-            // 2. Create a Vk image object
+            createImage(tex_width, tex_height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                        texture_image, texture_image_memory);
+        }
+
+        /**
+         * Creates an image.
+         */
+        void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image,
+                         VkDeviceMemory &image_memory) {
+            // 1. Create a Vk image object
             VkImageCreateInfo image_info{};
             image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
             image_info.imageType = VK_IMAGE_TYPE_2D;
-            image_info.extent.width = static_cast<uint32_t>(tex_width);
-            image_info.extent.height = static_cast<uint32_t>(tex_height);
+            image_info.extent.width = width;
+            image_info.extent.height = height;
             image_info.extent.depth = 1;
             image_info.mipLevels = 1;
             image_info.arrayLayers = 1;
@@ -269,7 +281,7 @@ class VulkanTemplateApp {
                 throw std::runtime_error("error: failed to create image!");
             }
 
-            // 3. Allocate memory for the image object
+            // 2. Allocate memory for the image object
             VkMemoryRequirements memRequirements;
             vkGetImageMemoryRequirements(device, texture_image, &memRequirements);
 
@@ -282,7 +294,7 @@ class VulkanTemplateApp {
                 throw std::runtime_error("error: failed to allocate image memory!");
             }
 
-            vkBindImageMemory(device, texture_image, texture_image_memory, 0);
+            vkBindImageMemory(device, image, image_memory, 0);
         }
 
         /**
