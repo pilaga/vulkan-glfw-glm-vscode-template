@@ -185,7 +185,19 @@ class VulkanTemplateApp {
          * @param size The device size.
          */
         void copyBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size) {
-            // Allocate a temporary command buffer
+            VkCommandBuffer command_buffer = beginSingleTimeCommands();
+
+            // Temporary command buffer only contains the copy command
+            VkBufferCopy copy_region{};
+            copy_region.srcOffset = 0;
+            copy_region.dstOffset = 0;
+            copy_region.size = size;
+            vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
+
+            endSingleTimeCommands(command_buffer);
+        }
+
+        VkCommandBuffer beginSingleTimeCommands() {
             VkCommandBufferAllocateInfo alloc_info{};
             alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
             alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -195,23 +207,18 @@ class VulkanTemplateApp {
             VkCommandBuffer command_buffer;
             vkAllocateCommandBuffers(device, &alloc_info, &command_buffer);
 
-            // Start recording the temporary command buffer
             VkCommandBufferBeginInfo begin_info{};
             begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
             vkBeginCommandBuffer(command_buffer, &begin_info);
 
-            // Temporary command buffer only contains the copy command
-            VkBufferCopy copy_region{};
-            copy_region.srcOffset = 0;
-            copy_region.dstOffset = 0;
-            copy_region.size = size;
-            vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
+            return command_buffer;
+        }
 
+        void endSingleTimeCommands(VkCommandBuffer command_buffer) {
             vkEndCommandBuffer(command_buffer);
 
-            // Execute the command buffer
             VkSubmitInfo submit_info{};
             submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             submit_info.commandBufferCount = 1;
