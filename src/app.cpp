@@ -231,6 +231,16 @@ class VulkanTemplateApp {
         }
 
         /**
+         * Function to handle layout transitions.
+         * https://vulkan-tutorial.com/Texture_mapping/Images
+         */
+        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout) {
+            VkCommandBuffer command_buffer = beginSingleTimeCommands();
+
+            endSingleTimeCommands(command_buffer);
+        }
+
+        /**
          * Creates a texture from an image file.
          */
         void createTextureImage() {
